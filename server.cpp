@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include <arpa/inet.h>
 
 template<typename Out>
 void split(const std::string &s, char delimiter, Out result, bool skip) {
@@ -39,6 +40,7 @@ int main() {
     address.sin_family = AF_INET;
     address.sin_port = htons(7777);
     address.sin_addr.s_addr = INADDR_ANY;
+
     Server server(AF_INET, SOCK_STREAM, 0, address);
     while (!server.is_stopped()) {
         std::string command;
@@ -46,43 +48,26 @@ int main() {
         auto &&arguments = split(command, ' ');
         if (arguments.size() == 1 && arguments[0] == "shutdown") {
             server.stop();
-            std::cout << "shutdown inited" << std::endl;
-            break;
-        } else if (!arguments.empty() && arguments[0] == "kill") {
-            if (arguments.size() != 2) {
-                std::cerr << "kill arguments not found" << std::endl;
-                continue;
-            }
-            try {
-                socket_t descriptor = std::stoi(arguments[1]);
-                int stat = server.kill(descriptor);
-                std::cout << "connection '" << arguments[1];
-                switch (stat) {
-                    case 1: {
-                        std::cout << "' hasn't exist" << std::endl;
-                        break;
-                    }
-                    case 0: {
-                        std::cout << "' closed" << std::endl;
-                        break;
-                    }
-                    case -1: {
-                        std::cout << "' already closed" << std::endl;
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            } catch (...) {
-                std::cerr << "descriptor '" << arguments[1] << "' is not number" << std::endl;
+        } else if (arguments.size() == 2 && arguments[0] == "kill") {
+            std::istringstream stream(arguments[1]);
+            socket_t descriptor = 0;
+            stream >> descriptor;
+            if (!stream.fail()) {
+                server.kill(descriptor);
+            } else if (arguments[1] == "all") {
+                auto &&descriptors = server.get_descriptors();
+                for (auto &&entry: descriptors) server.kill(entry.first);
+            } else {
+                std::cerr << "argument '" << arguments[1] << "' hasn't recognized" << std::endl;
             }
         } else if (arguments.size() == 1 && arguments[0] == "list") {
             auto &&descriptors = server.get_descriptors();
-            if (descriptors.empty()) std::cout << "connections hasn't found" << std::endl;
             for (auto &&entry: descriptors) {
                 auto &&descriptor = entry.first;
-                // auto &&address = entry.second;
-                std::cout << descriptor << std::endl;
+                auto &&client_address = entry.second;
+                auto &&host = inet_ntoa(client_address.sin_addr);
+                auto &&port = client_address.sin_port;
+                printf("%-4d %10s:%d\n", descriptor, host, port);
             }
         } else {
             std::cerr << "command '" << command << "' hasn't recognized" << std::endl;

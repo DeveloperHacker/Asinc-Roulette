@@ -27,6 +27,8 @@ public:
 
     ~Socket();
 
+    address_t get_address();
+
     socket_t accept();
 
     void bind(const address_t &address);

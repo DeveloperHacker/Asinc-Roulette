@@ -27,7 +27,7 @@ void task(socket_t descriptor, std::mutex &mutex, State &state, std::function<bo
         close = handle(socket);
     } catch (Socket::error &ex) {
         std::stringstream format;
-        format << "[TCPServer::handle] " << ex.what() << std::endl;
+        format << "[TCPServer::task] " << ex.what() << std::endl;
         std::cerr << format.str();
         close = true;
     }
@@ -49,41 +49,49 @@ void TCPServer::run() {
 
     std::mutex mutex;
     while (!stop_requests) {
-        fd_set read_fd_set = this->descriptor_set();
-        timeval timeout{TIMEOUT_SEC, TIMEOUT_USEC};
-        int ready = select(max_descriptor + 1, &read_fd_set, nullptr, nullptr, &timeout);
-        if (ready < 0) throw Socket::error("select is ripped");
-        if (ready == 0) continue;
-        if (FD_ISSET(socket.descriptor, &read_fd_set)) {
-            auto &&descriptor = socket.accept();
-            if (descriptor > max_descriptor) max_descriptor = descriptor;
-            State state{};
-            std::unique_lock<std::mutex> lock(descriptors_mutex);
-            descriptors.emplace(descriptor, state);
-        } else {
-            std::unique_lock<std::mutex> descriptors_lock(descriptors_mutex);
-            auto &&it = std::begin(descriptors);
-            while (it != std::end(descriptors)) {
-                auto &&entry = *it;
-                auto &&descriptor = entry.first;
-                auto &&state = entry.second;
-                {
-                    std::unique_lock<std::mutex> lock(mutex);
-                    if (state.close) {
-                        Socket(descriptor).raw_close();
-                        it = descriptors.erase(it);
-                        continue;
-                    } else {
-                        ++it;
+        try {
+            fd_set read_fd_set = this->descriptor_set();
+            timeval timeout{TIMEOUT_SEC, TIMEOUT_USEC};
+            int ready = select(max_descriptor + 1, &read_fd_set, nullptr, nullptr, &timeout);
+            if (ready < 0) throw Socket::error("select is ripped");
+            if (ready == 0) continue;
+            if (FD_ISSET(socket.descriptor, &read_fd_set)) {
+                auto &&descriptor = socket.accept();
+                if (descriptor > max_descriptor) max_descriptor = descriptor;
+                State state{};
+                state.address = Socket(descriptor).get_address();
+                std::unique_lock<std::mutex> lock(descriptors_mutex);
+                descriptors.emplace(descriptor, state);
+            } else {
+                std::unique_lock<std::mutex> descriptors_lock(descriptors_mutex);
+                auto &&it = std::begin(descriptors);
+                while (it != std::end(descriptors)) {
+                    auto &&entry = *it;
+                    auto &&descriptor = entry.first;
+                    auto &&state = entry.second;
+                    {
+                        std::unique_lock<std::mutex> lock(mutex);
+                        if (state.close) {
+                            Socket(descriptor).raw_close();
+                            it = descriptors.erase(it);
+                            continue;
+                        } else {
+                            ++it;
+                        }
+                        if (!FD_ISSET(descriptor, &read_fd_set)) continue;
+                        if (!state.free) continue;
+                        state.free = false;
                     }
-                    if (!FD_ISSET(descriptor, &read_fd_set)) continue;
-                    if (!state.free) continue;
-                    state.free = false;
+                    pool.enqueue(task, descriptor, std::ref(mutex), std::ref(state),
+                                 [this](SafeSocket &socket) -> bool {
+                                     this->handle(socket);
+                                 });
                 }
-                pool.enqueue(task, descriptor, std::ref(mutex), std::ref(state), [this](SafeSocket &socket) -> bool {
-                    this->handle(socket);
-                });
             }
+        } catch (Socket::error &ex) {
+            std::stringstream format;
+            format << "[TCPServer::loop] " << ex.what() << std::endl;
+            std::cerr << format.str();
         }
     }
     std::condition_variable event;
