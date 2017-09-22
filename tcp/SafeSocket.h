@@ -10,9 +10,9 @@ private:
     Socket socket;
 
 public:
-    explicit SafeSocket(Socket &socket) : socket(socket.descriptor) {};
+    explicit SafeSocket(Socket &socket) : socket(socket.descriptor) {}; // NOLINT
 
-    explicit SafeSocket(socket_t descriptor) : socket(descriptor) {};
+    explicit SafeSocket(socket_t descriptor) : socket(descriptor) {}; // NOLINT
 
     void send(const char *message, int flags) {
         socket.send(message, flags);
