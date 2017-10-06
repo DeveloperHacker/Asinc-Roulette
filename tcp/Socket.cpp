@@ -40,13 +40,13 @@ int raw_receive(socket_t socket, char *message, size_t length, int flags) {
     return received;
 }
 
-std::string Socket::receive(int flags) {
+std::string Socket::receive() {
     std::string buffer;
     auto offset = -1;
     auto index = std::string::npos;
     while (index == std::string::npos) {
         char buf[BUFFER_SIZE];
-        int length = raw_receive(descriptor, buf, BUFFER_SIZE, flags);
+        int length = raw_receive(descriptor, buf, BUFFER_SIZE, 0);
         std::string data(buf, static_cast<unsigned long>(length));
         buffer.append(data);
         index = data.find("\r\n");
@@ -56,19 +56,19 @@ std::string Socket::receive(int flags) {
     return message;
 }
 
-void Socket::send(const char *message, int flags) {
+void Socket::send(const char *message) {
     std::string data(message);
     data.append("\r\n", 2);
     for (unsigned left = 0; left < data.length(); left += BUFFER_SIZE) {
         auto right = left + BUFFER_SIZE;
         auto sub_data = data.substr(left, right);
-        auto length = ::send(descriptor, sub_data.c_str(), BUFFER_SIZE, flags);
+        auto length = ::send(descriptor, sub_data.c_str(), BUFFER_SIZE, 0);
         if (length <= 0) throw Socket::error("send: connection refused");
     }
 }
 
-void Socket::send(const std::string &message, int flags) {
-    send(message.c_str(), flags);
+void Socket::send(const std::string &message) {
+    send(message.c_str());
 }
 
 int Socket::raw_close() {
@@ -95,3 +95,46 @@ address_t Socket::get_address() {
     if (success < 0) throw Socket::error("address: error");
     return address;
 }
+
+address_t Socket::address(const std::string &host, uint16_t port) {
+    return address(host.c_str(), port);
+}
+
+address_t Socket::address(const char *host, uint16_t port) {
+    address_t address{};
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    address.sin_addr.s_addr = inet_addr(host);
+    return address;
+}
+
+address_t Socket::address(uint16_t port) {
+    address_t address{};
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    address.sin_addr.s_addr = INADDR_ANY;
+    return address;
+}
+
+void Socket::shutdown() {
+    auto &&success = raw_shutdown();
+    if (success < 0) throw Socket::error("shutdown: error");
+}
+
+int Socket::raw_shutdown() {
+    return ::shutdown(descriptor, SHUT_RDWR);
+}
+
+bool Socket::select() {
+    return select(nullptr);
+}
+
+bool Socket::select(timeval *timeout) {
+    fd_set view{};
+    FD_ZERO(&view);
+    FD_SET(descriptor, &view);
+    auto &&ready = ::select(descriptor + 1, &view, nullptr, nullptr, timeout);
+    if (ready < 0) throw Socket::error("select is ripped");
+    return static_cast<bool>(ready);
+}
+

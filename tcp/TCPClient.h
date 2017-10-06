@@ -3,40 +3,45 @@
 #include <thread>
 #include <iostream>
 #include <mutex>
-#include "../../tcp/Socket.h"
+#include <functional>
+#include "Socket.h"
+
+class Task {
+public:
+    const std::string message;
+
+public:
+    explicit Task(const char *message) : message(message) {}
+
+    explicit Task(const std::string &message) : message(message) {}
+
+    ~Task() = default;
+};
 
 class TCPClient {
 private:
     bool stop_requests;
+
     Socket socket;
-    std::thread thread;
+
+    std::thread input_thread;
+
+    std::thread output_thread;
+
     std::mutex mutex;
 
 public:
-    TCPClient(int domain, int type, int protocol, address_t &address) :
-            socket(domain, type, protocol),
-            stop_requests(false),
-            thread([this] { this->run(); }) {
-        socket.connect(address);
-    }
+    TCPClient(int domain, int type, int protocol, const address_t &address);
 
-    void run() {
-        while (!stop_requests) {
-            try {
-                handle(socket);
-            } catch (std::exception &ex) {
-                std::cerr << ex.what() << std::endl;
-            }
-            std::unique_lock lock(mutex);
-        }
-    }
+    void join();
 
-    void shutdown() {
-        std::unique_lock lock(mutex);
-        stop_requests = true;
-        socket.shutdown();
-        socket.raw_close();
-    }
+    void stop();
 
-    virtual bool handle(Socket socket);
+protected:
+    virtual void input(const Task &task) = 0;
+
+    virtual Task output() = 0;
+
+private:
+    void safe_run(const std::function<void()> &function);
 };

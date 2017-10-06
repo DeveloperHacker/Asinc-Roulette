@@ -1,8 +1,18 @@
-//
-// Created by sergei on 29/09/17.
-//
+#include "../../tcp/TCPClient.h"
 
-#ifndef CLIENT_SERVER_READCLIENT_H
-#define CLIENT_SERVER_READCLIENT_H
+class ReadClient : public TCPClient {
+public:
+    ReadClient(int domain, int type, int protocol, address_t &address) :
+            TCPClient(domain, type, protocol, address) {}
 
-#endif //CLIENT_SERVER_READCLIENT_H
+protected:
+    Task output() override {
+        std::string message;
+        std::getline(std::cin, message);
+        return Task(message);
+    };
+
+    void input(const Task &task) override {
+        std::cout << "report: '" << task.message << "'" << std::endl;
+    }
+};

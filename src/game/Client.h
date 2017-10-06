@@ -1,8 +1,21 @@
-//
-// Created by sergei on 29/09/17.
-//
+#pragma once
 
-#ifndef CLIENT_SERVER_CLIENT_H
-#define CLIENT_SERVER_CLIENT_H
+#include "../../tcp/TCPClient.h"
+#include "State.h"
 
-#endif //CLIENT_SERVER_CLIENT_H
+class Client : public TCPClient {
+private:
+    State state{GUEST};
+
+public:
+    Client(int domain, int type, int protocol, address_t &address);
+
+    ~Client();
+
+private:
+    virtual void input(const Task &task);
+
+    virtual Task output();
+};
+
+

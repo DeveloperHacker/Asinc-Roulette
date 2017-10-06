@@ -14,17 +14,17 @@ public:
 
     explicit SafeSocket(socket_t descriptor) : socket(descriptor) {}; // NOLINT
 
-    void send(const char *message, int flags) {
-        socket.send(message, flags);
+    void send(const char *message) {
+        socket.send(message);
     }
 
-    void send(const std::string &message, int flags) {
-        socket.send(message, flags);
+    void send(const std::string &message) {
+        socket.send(message);
     }
 
-    std::string receive(int flags) {
+    std::string receive() {
         if (empty) throw Socket::error("socket is already read");
         empty = true;
-        return socket.receive(flags);
+        return socket.receive();
     }
 };

@@ -1,8 +1,21 @@
-//
-// Created by sergei on 06/10/17.
-//
+#pragma once
 
-#ifndef CLIENT_SERVER_TABLE_H_H
-#define CLIENT_SERVER_TABLE_H_H
+#include <vector>
+#include "Role.h"
 
-#endif //CLIENT_SERVER_TABLE_H_H
+class Table {
+private:
+    ID croupier;
+
+    std::vector<ID> gamers;
+
+    size_t expect_gamers;
+
+
+public:
+    Table(ID croupier, size_t expect_gamers);
+
+    bool add_user(ID user);
+
+    bool remove_user(ID user);
+};

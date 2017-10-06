@@ -1,8 +1,20 @@
-//
-// Created by sergei on 06/10/17.
-//
+#pragma once
 
-#ifndef CLIENT_SERVER_DATABASE_H
-#define CLIENT_SERVER_DATABASE_H
+#include "Role.h"
+#include <string>
 
-#endif //CLIENT_SERVER_DATABASE_H
+class DataBase {
+public:
+    static const ID INVALID_ID = -1;
+
+public:
+    ID get_id(const std::string &login, const std::string &password);
+
+    Role get_role(ID id);
+
+    ID register_user(const std::string &login, const std::string &password);
+
+    bool set_role(ID id, Role role);
+
+    bool set_role(const std::string &login, Role role);
+};

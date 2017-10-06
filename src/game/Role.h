@@ -1,8 +1,7 @@
-//
-// Created by sergei on 06/10/17.
-//
+#pragma once
 
-#ifndef CLIENT_SERVER_ROLE_H
-#define CLIENT_SERVER_ROLE_H
+using ID = int;
 
-#endif //CLIENT_SERVER_ROLE_H
+enum Role {
+    CROUPIER, GAMER
+};
