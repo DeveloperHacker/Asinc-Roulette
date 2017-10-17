@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(client_server)
+project(async_roulette)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -28,19 +28,21 @@ set(DB src/game/DataBase.h)
 
 set(ROLE src/game/Role.h)
 
-set(JSON lib/json.hpp)
+set(JSON lib/json/src/json.hpp)
 
-set(BASE64 lib/base64.h lib/base64.cpp)
+set(BASE64 lib/raw/base64.h lib/raw/base64.cpp)
 
-set(AES lib/aes.h lib/aes.cpp)
+set(AES lib/raw/aes.h lib/raw/aes.cpp)
 
-set(BIGINTEGER lib/biginteger.h)
+set(RSA lib/raw/rsa.h)
 
-set(TRANSMIT src/encryption.h ${JSON} ${BASE64} ${BIGINTEGER} ${AES})
+set(BIGINTEGER lib/raw/biginteger.h)
 
-set(GAME_SERVER src/game/Server.h src/game/Server.cpp ${ROLE} ${TCP_SERVER} ${STATE} ${TRANSMIT})
+set(ENCRYPTION src/encryption.h ${JSON} ${BASE64} ${BIGINTEGER} ${AES} ${RSA})
 
-set(GAME_CLINET src/game/Client.h src/game/Client.cpp ${DB} ${TABLE} ${TCP_CLIENT} ${STATE} ${TRANSMIT})
+set(GAME_SERVER src/game/Server.h src/game/Server.cpp ${ROLE} ${TCP_SERVER} ${STATE} ${ENCRYPTION})
+
+set(GAME_CLINET src/game/Client.h src/game/Client.cpp ${DB} ${TABLE} ${TCP_CLIENT} ${STATE} ${ENCRYPTION})
 
 set(CONFIG src/Config.h)
 
