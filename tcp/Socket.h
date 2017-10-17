@@ -7,15 +7,15 @@
 typedef int socket_t;
 typedef sockaddr_in address_t;
 
-class Socket {
-public:
+namespace Socket {
     class error : public std::runtime_error {
         using std::runtime_error::runtime_error;
-
     public:
-        virtual ~error() = default;
+        ~error() override = default;
     };
+}
 
+class Socket {
 public:
     const static size_t BUFFER_SIZE = 512;
     const socket_t descriptor;
