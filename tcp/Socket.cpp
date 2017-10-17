@@ -6,6 +6,13 @@
 #include <arpa/inet.h>
 #include "Socket.h"
 
+
+class Socket::error : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+public:
+    ~error() override = default;
+};
+
 Socket::Socket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
 
 Socket::Socket(socket_t socket) : descriptor(socket) {}

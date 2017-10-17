@@ -32,11 +32,11 @@ set(JSON lib/json/src/json.hpp)
 
 set(CRYPTO lib/crypto/base64.cpp lib/crypto/base64.h lib/crypto/Crypto.cpp lib/crypto/Crypto.h)
 
-set(TRANSFER src/transfer.h src/transfer.cpp ${JSON} ${CRYPTO})
+set(TRANSFER src/Transfer.cpp src/Transfer.h ${CRYPTO} ${JSON})
 
 set(SERVER src/game/Server.h src/game/Server.cpp ${ROLE} ${TCP_SERVER} ${STATE} ${TRANSFER})
 
-set(CLINET src/game/Client.h src/game/Client.cpp ${DB} ${TABLE} ${TCP_CLIENT} ${STATE} ${TRANSFER} src/transfer.cpp)
+set(CLINET src/game/Client.h src/game/Client.cpp ${DB} ${TABLE} ${TCP_CLIENT} ${STATE} ${TRANSFER})
 
 set(CONFIG src/Config.h)
 
@@ -45,7 +45,4 @@ set(COMMAND src/Command.h)
 add_executable(server src/server.cpp ${CONFIG} ${SERVER} ${ECHO_SERVER} ${COMMAND})
 
 add_executable(client src/client.cpp ${CONFIG} ${CLINET} ${READ_CLIENT})
-
-add_executable(example1 lib/examples/example1.cpp)
-
-add_executable(example2 lib/examples/example2.cpp)
+add_executable(playgound src/playgound.cpp ${TRANSFER})
