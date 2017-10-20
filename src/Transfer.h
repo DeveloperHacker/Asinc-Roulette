@@ -3,18 +3,23 @@
 #include "../lib/crypto/Crypto.h"
 #include <string>
 
-class Transfer {
-private:
-    enum Type {
-        MASTER, SLAVE
-    };
+enum Type {
+    MASTER, SLAVE
+};
 
+enum State {
+    RSA, AES
+};
+
+
+class Transfer {
 public:
     class error;
 
 private:
     Crypto crypto;
     Type type;
+    State state;
 
 public:
     Transfer();
@@ -34,4 +39,13 @@ public:
     std::string encrypt(const char *message);
 
     std::string decrypt(const char *message);
+
+private:
+    std::string Transfer::rsa_encrypt(const std::string &message);
+
+    std::string Transfer::rsa_decrypt(const std::string &message);
+
+    std::string Transfer::aes_encrypt(const std::string &message);
+
+    std::string Transfer::aes_decrypt(const std::string &message);
 };

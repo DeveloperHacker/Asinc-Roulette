@@ -5,7 +5,7 @@
 int main() {
     Transfer master;
     auto &&rsa_key = master.rsa_key();
-    std::cout << "Rsa key          = " << rsa_key << std::endl;
+    std::cout << rsa_key << std::endl;
     Transfer slave(rsa_key);
     auto &&aes_key = slave.aes_key();
     std::cout << "Aes key          = " << aes_key << std::endl;
