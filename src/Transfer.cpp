@@ -4,12 +4,6 @@
 #include <stdexcept>
 #include <iostream>
 
-class Transfer::error : public std::runtime_error {
-    using std::runtime_error::runtime_error;
-public:
-    ~error() override = default;
-};
-
 Transfer::Transfer() : type(MASTER) {};
 
 Transfer::Transfer(const std::string &key) : type(SLAVE) {

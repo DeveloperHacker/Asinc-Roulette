@@ -2,15 +2,19 @@
 
 #include "../lib/crypto/Crypto.h"
 #include <string>
+#include <stdexcept>
+
+enum Type {
+    MASTER, SLAVE
+};
 
 class Transfer {
-private:
-    enum Type {
-        MASTER, SLAVE
-    };
-
 public:
-    class error;
+    class error : public std::runtime_error {
+        using std::runtime_error::runtime_error;
+    public:
+        ~error() override = default;
+    };
 
 private:
     Crypto crypto;

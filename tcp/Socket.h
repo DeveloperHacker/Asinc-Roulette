@@ -9,7 +9,11 @@ typedef sockaddr_in address_t;
 
 class Socket {
 public:
-    class error;
+    class error : public std::runtime_error {
+        using std::runtime_error::runtime_error;
+    public:
+        ~error() override = default;
+    };
 
 public:
     const static size_t BUFFER_SIZE = 512;

@@ -4,7 +4,7 @@ project(async_roulette)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -g2 -O0 -lcrypto")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -lcrypto")
 
 set(SOCKET tcp/Socket.cpp tcp/Socket.h)
 
@@ -45,4 +45,5 @@ set(COMMAND src/Command.h)
 add_executable(server src/server.cpp ${CONFIG} ${SERVER} ${ECHO_SERVER} ${COMMAND})
 
 add_executable(client src/client.cpp ${CONFIG} ${CLINET} ${READ_CLIENT})
-add_executable(playgound src/playgound.cpp ${TRANSFER})
+
+add_executable(playground src/playgound.cpp ${TRANSFER})

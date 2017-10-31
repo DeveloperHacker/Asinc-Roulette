@@ -47,7 +47,7 @@ public:
 
     void stop();
 
-    bool is_stopped();
+    bool stopped();
 
     std::unordered_map<int, address_t> get_descriptors();
 
@@ -58,4 +58,6 @@ protected:
 
 private:
     fd_set descriptor_set();
+    
+    void cleanup();
 };

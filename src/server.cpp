@@ -82,7 +82,7 @@ int main() {
     EchoServer server(AF_INET, SOCK_STREAM, 0, address);
     Commands commands;
     init(server, commands);
-    while (!server.is_stopped()) {
+    while (!server.stopped()) {
         std::string raw_command;
         std::getline(std::cin, raw_command);
         Command command(raw_command);

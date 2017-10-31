@@ -1,9 +1,6 @@
 [submodule "crypto"]
 	path = lib/crypto
 	url = https://github.com/shanet/Crypto-Example
-[submodule "openssl"]
-	path = lib/openssl
-	url = https://github.com/openssl/openssl
 [submodule "json"]
     path = lib/json
     url = https://github.com/nlohmann/json
