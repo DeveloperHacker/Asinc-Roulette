@@ -4,7 +4,7 @@ project(async_roulette)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -lcrypto")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -g3 -lcrypto")
 
 set(SOCKET tcp/Socket.cpp tcp/Socket.h)
 
