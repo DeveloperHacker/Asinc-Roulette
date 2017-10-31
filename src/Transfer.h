@@ -4,8 +4,10 @@
 #include <string>
 #include <stdexcept>
 
-enum Type {
-    MASTER, SLAVE
+enum State {
+    MASTER,
+    SLAVE,
+    EQUALITY
 };
 
 class Transfer {
@@ -18,7 +20,7 @@ public:
 
 private:
     Crypto crypto;
-    Type type;
+    State state;
 
 public:
     Transfer();
@@ -27,10 +29,6 @@ public:
 
     std::string rsa_key();
 
-    std::string aes_key();
-
-    void aes_key(const std::string &key);
-
     std::string encrypt(const std::string &message);
 
     std::string decrypt(const std::string &message);
@@ -38,4 +36,13 @@ public:
     std::string encrypt(const char *message);
 
     std::string decrypt(const char *message);
+
+private:
+    std::string rsa_encrypt(const std::string &message);
+
+    std::string rsa_decrypt(const std::string &message);
+
+    std::string aes_encrypt(const std::string &message);
+
+    std::string aes_decrypt(const std::string &message);
 };

@@ -5,11 +5,8 @@
 int main() {
     Transfer master;
     auto &&rsa_key = master.rsa_key();
-    std::cout << "Rsa key          = " << rsa_key << std::endl;
+    std::cout << rsa_key << std::endl;
     Transfer slave(rsa_key);
-    auto &&aes_key = slave.aes_key();
-    std::cout << "Aes key          = " << aes_key << std::endl;
-    master.aes_key(aes_key);
     auto &&encrypt_request = slave.encrypt("request");
     std::cout << "Encrypt request  = " << encrypt_request << std::endl;
     auto &&decrypt_request = master.decrypt(encrypt_request);
