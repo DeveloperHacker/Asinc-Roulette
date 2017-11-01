@@ -1,6 +1,7 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <string>
 #include <stdexcept>
 
@@ -30,11 +31,13 @@ public:
 
     bool select(timeval *timeout);
 
-    address_t get_address();
+    address_t get_address() const;
 
     socket_t accept();
 
     void bind(const address_t &address);
+
+    void set_options(int option);
 
     void listen(int backlog);
 
@@ -46,6 +49,8 @@ public:
 
     std::string receive();
 
+    bool closed() const;
+
     void close();
 
     int raw_close();
@@ -54,11 +59,11 @@ public:
 
     int raw_shutdown();
 
-public:
     static address_t address(const std::string &host, uint16_t port);
 
     static address_t address(const char *host, uint16_t port);
 
     static address_t address(uint16_t port);
-};
 
+    friend std::ostream &operator<<(std::ostream &stream, const Socket &socket);
+};

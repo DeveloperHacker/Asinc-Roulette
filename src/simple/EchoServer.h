@@ -2,20 +2,20 @@
 
 #include "../../tcp/Socket.h"
 #include "../../tcp/TCPServer.h"
+#include "../Transfer.h"
 #include <iostream>
 #include <algorithm>
 
+const std::string INIT_MESSAGE("init");
+
 class EchoServer : public TCPServer {
+private:
+    Transfer transfer;
+    Transfer::State state;
+
 public:
-    EchoServer(int domain, int type, int protocol, address_t &address) :
-            TCPServer(domain, type, protocol, address) {}
+    EchoServer(int domain, int type, int protocol, address_t &address);
 
 protected:
-    bool handle(SafeSocket &socket) override {
-        std::string message = socket.receive();
-        std::cout << "received: '" << message << "'" << std::endl;
-        std::transform(message.begin(), message.end(), message.begin(), ::toupper);
-        socket.send(message);
-        return message == "close";
-    }
+    bool handle(const std::string &message, SendSocket &socket) override;
 };

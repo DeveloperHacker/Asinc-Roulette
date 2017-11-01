@@ -5,6 +5,6 @@ Server::Server(int domain, int type, int protocol, address_t &address)
         : TCPServer(domain, type, protocol, address) {
 }
 
-bool Server::handle(SafeSocket &socket) {
+bool Server::handle(const std::string &message, SendSocket &socket) {
 
 }

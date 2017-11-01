@@ -13,9 +13,9 @@ public:
     ~Client();
 
 private:
-    virtual void input(const Task &task);
+    virtual void input(const std::string &message);
 
-    virtual Task output();
+    virtual std::string output();
 };
 
 

@@ -2,7 +2,6 @@
 #include "Command.h"
 #include "simple/EchoServer.h"
 #include "Config.h"
-#include <arpa/inet.h>
 #include <functional>
 
 using CommandArgs = std::vector<std::string>;
@@ -82,6 +81,11 @@ int main() {
     EchoServer server(AF_INET, SOCK_STREAM, 0, address);
     Commands commands;
     init(server, commands);
+    if (!server.start()) {
+        std::cerr << "Server already started" << std::endl;
+        exit(1);
+    }
+    std::cout << "Server started" << std::endl;
     while (!server.stopped()) {
         std::string raw_command;
         std::getline(std::cin, raw_command);

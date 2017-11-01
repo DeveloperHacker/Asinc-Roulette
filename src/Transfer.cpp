@@ -8,10 +8,7 @@
 Transfer::Transfer() : state(INIT), crypto() {};
 
 Transfer::Transfer(const std::string &public_key) : state(INIT), crypto() {
-    auto *c_key = new unsigned char[public_key.length()];
-    memcpy(c_key, public_key.c_str(), public_key.length());
-    crypto.setRemotePublicKey(c_key, public_key.length());
-    delete c_key;
+    set_public_key(public_key);
 }
 
 std::string Transfer::public_key() {
@@ -21,6 +18,13 @@ std::string Transfer::public_key() {
     std::string result(reinterpret_cast<char *>(public_key));
     free(public_key);
     return result;
+}
+
+void Transfer::set_public_key(const std::string &key) {
+    auto *c_key = new unsigned char[key.length()];
+    memcpy(c_key, key.c_str(), key.length());
+    crypto.setRemotePublicKey(c_key, key.length());
+    delete c_key;
 }
 
 class Vector {
@@ -108,8 +112,8 @@ std::vector<char> Transfer::rsa_encrypt(const std::vector<unsigned char> &messag
     if (length == FAILURE) throw Transfer::error("RSA encryption fail");
     auto &&v = std::make_shared<Vector>(length, key_len, iv_len, encrypted, key, iv);
     auto &&constructed = construct(v);
-    char *b64;
-    auto b64_length = base64Encode(constructed.data(), constructed.size(), &b64);
+    auto *b64 = base64Encode(constructed.data(), constructed.size());
+    auto b64_length = strlen(b64) + 1;
     std::vector<char> result(b64_length, 0);
     memcpy(result.data(), b64, b64_length);
     free(b64);
@@ -134,8 +138,8 @@ std::vector<char> Transfer::aes_encrypt(const std::vector<unsigned char> &messag
     unsigned char *encrypted;
     auto length = crypto.aesEncrypt(message.data(), message.size() + 1, &encrypted);
     if (length == FAILURE) throw Transfer::error("AES encryption fail");
-    char *b64;
-    auto b64_length = base64Encode(encrypted, static_cast<const size_t>(length), &b64);
+    auto *b64 = base64Encode(encrypted, static_cast<const size_t>(length));
+    auto b64_length = strlen(b64) + 1;
     std::vector<char> result(b64_length, 0);
     memcpy(result.data(), b64, b64_length);
     free(encrypted);

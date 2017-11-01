@@ -1,23 +1,26 @@
 #pragma once
 
 
-#include "SafeSocket.h"
+#include "SendSocket.h"
 #include <thread>
 #include <unordered_map>
 #include <mutex>
 
 
-struct State {
-    std::mutex &mutex;
-
-    address_t address;
-
-    bool free;
-
-    bool close;
-};
-
 class TCPServer {
+public:
+    struct State {
+        socket_t descriptor;
+
+        std::mutex &mutex;
+
+        address_t address;
+
+        bool free;
+
+        bool close;
+    };
+
 public:
     static const size_t NUM_THREADS = 4;
 
@@ -41,7 +44,7 @@ public:
 
     virtual ~TCPServer();
 
-    void run();
+    bool start();
 
     void join();
 
@@ -54,10 +57,12 @@ public:
     int kill(socket_t descriptor);
 
 protected:
-    virtual bool handle(SafeSocket &socket) = 0;
+    virtual bool handle(const std::string &message, SendSocket &socket) = 0;
 
 private:
+    void run();
+
     fd_set descriptor_set();
-    
+
     void cleanup();
 };

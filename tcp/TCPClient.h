@@ -5,20 +5,15 @@
 #include <mutex>
 #include <functional>
 #include "Socket.h"
+#include "SendSocket.h"
 
-class Task {
-public:
-    const std::string message;
-
-public:
-    explicit Task(const char *message) : message(message) {}
-
-    explicit Task(const std::string &message) : message(message) {}
-
-    ~Task() = default;
-};
+using status_t = int;
 
 class TCPClient {
+public:
+    static const status_t WAIT = 0;
+    static const status_t SEND = 1;
+
 private:
     bool stop_requests;
 
@@ -33,14 +28,16 @@ private:
 public:
     TCPClient(int domain, int type, int protocol, const address_t &address);
 
+    bool start();
+
     void join();
 
     void stop();
 
 protected:
-    virtual void input(const Task &task) = 0;
+    virtual void input(const std::string &message) = 0;
 
-    virtual Task output() = 0;
+    virtual void output(SendSocket &socket) = 0;
 
 private:
     void safe_run(const std::function<void()> &function);

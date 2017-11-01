@@ -6,36 +6,35 @@ Client::Client(int domain, int type, int protocol, sockaddr_in &address) :
 
 Client::~Client() = default;
 
-void Client::input(const Task &task) {
+void Client::input(const std::string &message) {
     switch (state) {
-        case GUEST: {
+        case ::GUEST: {
             break;
         }
-        case LOGIN: {
+        case ::LOGIN: {
             break;
         }
-        case WAIT: {
+        case ::WAIT: {
             break;
         }
-        case GAME: {
+        case ::GAME: {
             break;
         }
     }
 }
 
-Task Client::output() {
+std::string Client::output() {
     switch (state) {
-        case GUEST: {
-
+        case ::GUEST: {
             break;
         }
-        case LOGIN: {
+        case ::LOGIN: {
             break;
         }
-        case WAIT: {
+        case ::WAIT: {
             break;
         }
-        case GAME: {
+        case ::GAME: {
             break;
         }
     }

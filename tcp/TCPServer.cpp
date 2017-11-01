@@ -1,18 +1,18 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <iomanip>
 #include <set>
 #include "Socket.h"
 #include "ThreadPool.h"
 #include "TCPServer.h"
 
 
-TCPServer::TCPServer(int domain, int type, int protocol, address_t &address) :
-        socket(domain, type, protocol),
-        stop_requests(false) {
+TCPServer::TCPServer(int domain, int type, int protocol, address_t &address
+) : socket(domain, type, protocol), stop_requests(true) {
+    socket.set_options(SO_REUSEADDR);
     socket.bind(address);
     socket.listen(1);
-    thread = std::thread([this] { this->run(); });
 }
 
 TCPServer::~TCPServer() {
@@ -20,21 +20,31 @@ TCPServer::~TCPServer() {
     join();
 }
 
-void task(socket_t descriptor, State &state, std::function<bool(SafeSocket &)> handle) {
+bool TCPServer::start() {
+    if (!stop_requests) return false;
+    stop_requests = false;
+    thread = std::thread([this] { this->run(); });
+    return true;
+}
+
+void task(TCPServer::State &state, std::function<bool(const std::string &, SendSocket &)> handle) {
     bool close;
+    Socket socket(state.descriptor);
     try {
-        SafeSocket socket(descriptor);
-        close = handle(socket);
+        auto &&message = socket.receive();
+        std::cout << "Message receive " << socket << " " << message.c_str() << std::endl;
+        SendSocket send_socket(state.descriptor);
+        close = handle(message, send_socket);
     } catch (Socket::error &ex) {
-        std::stringstream format;
-        format << "[TCPServer::task] " << ex.what() << std::endl;
-        std::cerr << format.str();
+        std::cerr << "Socket '" << socket << "' error '" << ex.what() << "'" << std::endl;
         close = true;
     }
     std::unique_lock<std::mutex> lock(state.mutex);
     state.close = close;
     state.free = true;
-    if (close) Socket(descriptor).raw_close();
+    if (state.close) {
+        socket.raw_close();
+    }
 }
 
 void TCPServer::cleanup() {
@@ -60,18 +70,20 @@ void TCPServer::run() {
         try {
             fd_set read_fd_set = this->descriptor_set();
             timeval timeout{TIMEOUT_SEC, TIMEOUT_USEC};
-            int ready = select(max_descriptor + 1, &read_fd_set, nullptr, nullptr, &timeout);
-            cleanup();
+            int ready = ::select(max_descriptor + 1, &read_fd_set, nullptr, nullptr, &timeout);
             if (ready < 0) throw Socket::error("select is ripped");
+            cleanup();
             if (ready == 0) continue;
             if (FD_ISSET(socket.descriptor, &read_fd_set)) {
                 auto &&descriptor = socket.accept();
                 if (descriptor > max_descriptor) max_descriptor = descriptor;
                 std::mutex mutex;
                 auto &&address = Socket(descriptor).get_address();
-                State state{mutex, address, true, false};
+                Socket socket(descriptor);
+                State state{descriptor, mutex, address, true, false};
                 std::unique_lock<std::mutex> lock(descriptors_mutex);
                 descriptors.emplace(descriptor, state);
+                std::cout << "Connected client: " << socket << std::endl;
             } else {
                 std::unique_lock<std::mutex> descriptors_lock(descriptors_mutex);
                 for (auto &&entry : descriptors) {
@@ -81,14 +93,14 @@ void TCPServer::run() {
                     if (!FD_ISSET(descriptor, &read_fd_set)) continue;
                     if (!state.free) continue;
                     state.free = false;
-                    auto &&handle = [this](SafeSocket &socket) -> bool { this->handle(socket); };
-                    pool.enqueue(task, descriptor, std::ref(state), handle);
+                    auto &&handle = [this](const std::string &message, SendSocket &socket) -> bool {
+                        this->handle(message, socket);
+                    };
+                    pool.enqueue(task, std::ref(state), handle);
                 }
             }
         } catch (Socket::error &ex) {
-            std::stringstream format;
-            format << "[TCPServer::loop] " << ex.what() << std::endl;
-            std::cerr << format.str();
+            std::cerr << "Server error " << ex.what() << std::endl;
         }
     }
     std::condition_variable event;

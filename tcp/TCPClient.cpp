@@ -13,26 +13,29 @@ void TCPClient::safe_run(const std::function<void()> &function) {
     stop();
 }
 
-TCPClient::TCPClient(int domain, int type, int protocol, const address_t &address) :
-        socket(domain, type, protocol),
-        stop_requests(false) {
+TCPClient::TCPClient(int domain, int type, int protocol, const address_t &address
+) : socket(domain, type, protocol), stop_requests(true) {
     socket.connect(address);
+}
+
+bool TCPClient::start() {
+    if (!stop_requests) return false;
+    stop_requests = false;
     input_thread = std::thread([this] {
         this->safe_run([this] {
             auto &&ready = socket.select();
             if (!ready) return;
             auto &&message = socket.receive();
-            Task task(message);
-            input(task);
+            input(message);
         });
     });
     output_thread = std::thread([this] {
         this->safe_run([this]() {
-            auto &&task = output();
-            auto &&message = task.message;
-            socket.send(message);
+            SendSocket send_socket(socket);
+            output(send_socket);
         });
     });
+    return true;
 }
 
 void TCPClient::join() {

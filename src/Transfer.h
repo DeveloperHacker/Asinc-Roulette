@@ -5,12 +5,14 @@
 #include <vector>
 #include <stdexcept>
 
-enum State {
-    INIT,
-    READY
-};
 
 class Transfer {
+public:
+    enum State {
+        INIT,
+        READY
+    };
+
 public:
     class error : public std::runtime_error {
         using std::runtime_error::runtime_error;
@@ -28,6 +30,8 @@ public:
     explicit Transfer(const std::string &public_key);
 
     std::string public_key();
+
+    void set_public_key(const std::string &key);
 
     std::vector<char> encrypt(const std::vector<unsigned char> &message);
 

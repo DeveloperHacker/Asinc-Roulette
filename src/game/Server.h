@@ -13,5 +13,5 @@ private:
 public:
     Server(int domain, int type, int protocol, address_t &address);
 
-    bool handle(SafeSocket &socket) override;
+    bool handle(const std::string &message, SendSocket &socket) override;
 };

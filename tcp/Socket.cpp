@@ -8,7 +8,9 @@
 
 Socket::Socket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
 
-Socket::Socket(socket_t socket) : descriptor(socket) {}
+Socket::Socket(socket_t socket) : descriptor(socket) {
+
+}
 
 Socket::~Socket() = default;
 
@@ -87,13 +89,21 @@ socket_t Socket::accept() {
     return socket;
 }
 
-address_t Socket::get_address() {
+address_t Socket::get_address() const {
     address_t address{};
     auto *flatten = reinterpret_cast<sockaddr *>(&address);
     socklen_t address_len = sizeof(address);
     auto success = ::getsockname(descriptor, flatten, &address_len);
     if (success < 0) throw Socket::error("address: error");
     return address;
+}
+
+bool Socket::closed() const {
+    address_t address{};
+    auto *flatten = reinterpret_cast<sockaddr *>(&address);
+    socklen_t address_len = sizeof(address);
+    auto success = ::getsockname(descriptor, flatten, &address_len);
+    return success >= 0;
 }
 
 address_t Socket::address(const std::string &host, uint16_t port) {
@@ -138,3 +148,15 @@ bool Socket::select(timeval *timeout) {
     return static_cast<bool>(ready);
 }
 
+void Socket::set_options(int option) {
+    int one = 1;
+    ::setsockopt(descriptor, SOL_SOCKET, option, &one, sizeof(int));
+}
+
+std::ostream &operator<<(std::ostream &stream, const Socket &socket) {
+    auto &&address = socket.get_address();
+    auto &&host = inet_ntoa(address.sin_addr);
+    auto &&port = address.sin_port;
+    stream << socket.descriptor << " " << host << ":" << port;
+    return stream;
+}

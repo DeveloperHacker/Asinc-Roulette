@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 
 project(async_roulette)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -g3 -lcrypto")
 
@@ -10,13 +10,13 @@ set(SOCKET tcp/Socket.cpp tcp/Socket.h)
 
 set(THREAD_POOL tcp/ThreadPool.h)
 
-set(SAFE_SOCKET tcp/SafeSocket.h ${SOCKET})
+set(SAFE_SOCKET tcp/SendSocket.h ${SOCKET})
 
 set(TCP_SERVER tcp/TCPServer.cpp tcp/TCPServer.h ${THREAD_POOL} ${SAFE_SOCKET})
 
 set(TCP_CLIENT tcp/TCPClient.h tcp/TCPClient.cpp ${SOCKET})
 
-set(ECHO_SERVER src/simple/EchoServer.h ${TCP_SERVER})
+set(ECHO_SERVER src/simple/EchoServer.h ${TCP_SERVER} src/simple/EchoServer.cpp)
 
 set(READ_CLIENT src/simple/ReadClient.h ${TCP_CLIENT})
 
