@@ -28,6 +28,9 @@ bool TCPClient::start() {
             auto &&message = socket.receive();
             input(message);
         });
+        if (output_thread.joinable()) {
+            output_thread.detach();
+        }
     });
     output_thread = std::thread([this] {
         this->safe_run([this]() {
@@ -51,7 +54,7 @@ void TCPClient::stop() {
     std::unique_lock<std::mutex> lock(mutex);
     if (!stop_requests) {
         stop_requests = true;
-        socket.raw_shutdown();
-        socket.raw_close();
+        socket.safe_shutdown();
+        socket.safe_close();
     }
 }

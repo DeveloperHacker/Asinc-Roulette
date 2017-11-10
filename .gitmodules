@@ -1,6 +1,9 @@
 [submodule "crypto"]
 	path = lib/crypto
-	url = https://github.com/shanet/Crypto-Example
+	url = git@github.com:shanet/Crypto-Example.git
 [submodule "json"]
     path = lib/json
-    url = https://github.com/nlohmann/json
+    url = git@github.com:nlohmann/json.git
+[submodule "pool"]
+	path = lib/thread_pool
+	url = git@github.com:progschj/ThreadPool.git

@@ -2,23 +2,27 @@ cmake_minimum_required(VERSION 3.8)
 
 project(async_roulette)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -g3 -lcrypto")
 
-set(SOCKET tcp/Socket.cpp tcp/Socket.h)
+set(JSON lib/json/src/json.hpp)
 
-set(THREAD_POOL tcp/ThreadPool.h)
+set(CRYPTO lib/crypto/base64.cpp lib/crypto/base64.h lib/crypto/Crypto.cpp lib/crypto/Crypto.h)
+
+set(POOL lib/thread_pool/ThreadPool.h)
+
+set(SOCKET tcp/Socket.cpp tcp/Socket.h)
 
 set(SAFE_SOCKET tcp/SendSocket.h ${SOCKET})
 
-set(TCP_SERVER tcp/TCPServer.cpp tcp/TCPServer.h ${THREAD_POOL} ${SAFE_SOCKET})
+set(TCP_SERVER tcp/TCPServer.cpp tcp/TCPServer.h ${POOL} ${SAFE_SOCKET})
 
 set(TCP_CLIENT tcp/TCPClient.h tcp/TCPClient.cpp ${SOCKET})
 
 set(ECHO_SERVER src/simple/EchoServer.h ${TCP_SERVER} src/simple/EchoServer.cpp)
 
-set(READ_CLIENT src/simple/ReadClient.h ${TCP_CLIENT})
+set(READ_CLIENT src/simple/ReadClient.h ${TCP_CLIENT} src/simple/ReadClient.cpp)
 
 set(STATE src/game/State.h)
 
@@ -28,17 +32,13 @@ set(DB src/game/DataBase.h)
 
 set(ROLE src/game/Role.h)
 
-set(JSON lib/json/src/json.hpp)
-
-set(CRYPTO lib/crypto/base64.cpp lib/crypto/base64.h lib/crypto/Crypto.cpp lib/crypto/Crypto.h)
-
 set(TRANSFER src/Transfer.cpp src/Transfer.h ${CRYPTO} ${JSON})
 
 set(SERVER src/game/Server.h src/game/Server.cpp ${ROLE} ${TCP_SERVER} ${STATE} ${TRANSFER})
 
 set(CLINET src/game/Client.h src/game/Client.cpp ${DB} ${TABLE} ${TCP_CLIENT} ${STATE} ${TRANSFER})
 
-set(CONFIG src/Config.h)
+set(CONFIG src/global.h)
 
 set(COMMAND src/Command.h)
 

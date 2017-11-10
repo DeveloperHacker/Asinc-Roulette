@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
@@ -49,15 +50,13 @@ public:
 
     std::string receive();
 
-    bool closed() const;
-
     void close();
 
-    int raw_close();
+    int safe_close();
 
     void shutdown();
 
-    int raw_shutdown();
+    int safe_shutdown();
 
     static address_t address(const std::string &host, uint16_t port);
 
@@ -67,3 +66,9 @@ public:
 
     friend std::ostream &operator<<(std::ostream &stream, const Socket &socket);
 };
+
+static std::ostream &operator<<(std::ostream &stream, address_t address) {
+    auto &&host = inet_ntoa(address.sin_addr);
+    auto &&port = address.sin_port;
+    return stream << host << ":" << port;
+}

@@ -2,6 +2,7 @@
 
 
 #include "SendSocket.h"
+#include "../lib/thread_pool/ThreadPool.h"
 #include <thread>
 #include <unordered_map>
 #include <mutex>
@@ -12,13 +13,13 @@ public:
     struct State {
         socket_t descriptor;
 
-        std::mutex &mutex;
-
         address_t address;
 
         bool free;
 
         bool close;
+
+        std::mutex *mutex;
     };
 
 public:
@@ -35,9 +36,11 @@ private:
 
     bool stop_requests;
 
-    std::unordered_map<socket_t, State> descriptors;
+    std::unordered_map<socket_t, id_t> descriptors;
 
-    std::mutex descriptors_mutex;
+    std::unordered_map<id_t, State> connections;
+
+    std::mutex mutex;
 
 public:
     TCPServer(int domain, int type, int protocol, address_t &address);
@@ -52,17 +55,33 @@ public:
 
     bool stopped();
 
-    std::unordered_map<int, address_t> get_descriptors();
+    std::unordered_map<id_t, address_t> get_connections();
 
-    int kill(socket_t descriptor);
+    int kill(id_t id);
 
 protected:
-    virtual bool handle(const std::string &message, SendSocket &socket) = 0;
+    virtual bool handle(const std::string &message, id_t id, SendSocket &socket) = 0;
+
+    virtual void connect_handle(id_t id) = 0;
+
+    virtual void disconnect_handle(id_t id) = 0;
 
 private:
     void run();
 
     fd_set descriptor_set();
 
-    void cleanup();
+    void disconnect_connections();
+
+    void disconnect_unavailable_connections();
+
+    address_t handle_new_connection(int epoll_descriptor, id_t &max_id);
+
+    void handle_connection(socket_t descriptor, ThreadPool &pool);
+
+    State &state_by_descriptor(socket_t descriptor);
+
+    id_t id_by_descriptor(socket_t descriptor);
+
+    State &state_by_id(id_t id);
 };

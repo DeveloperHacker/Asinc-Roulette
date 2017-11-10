@@ -1,10 +1,11 @@
 
+#include "Socket.h"
+
 #include <iostream>
 #include <algorithm>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "Socket.h"
 
 Socket::Socket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
 
@@ -73,12 +74,12 @@ void Socket::send(const std::string &message) {
     send(message.c_str());
 }
 
-int Socket::raw_close() {
+int Socket::safe_close() {
     return ::close(descriptor);
 }
 
 void Socket::close() {
-    auto success = raw_close();
+    auto success = safe_close();
     if (success < 0) throw Socket::error("close: error");
 }
 
@@ -96,14 +97,6 @@ address_t Socket::get_address() const {
     auto success = ::getsockname(descriptor, flatten, &address_len);
     if (success < 0) throw Socket::error("address: error");
     return address;
-}
-
-bool Socket::closed() const {
-    address_t address{};
-    auto *flatten = reinterpret_cast<sockaddr *>(&address);
-    socklen_t address_len = sizeof(address);
-    auto success = ::getsockname(descriptor, flatten, &address_len);
-    return success >= 0;
 }
 
 address_t Socket::address(const std::string &host, uint16_t port) {
@@ -127,11 +120,11 @@ address_t Socket::address(uint16_t port) {
 }
 
 void Socket::shutdown() {
-    auto &&success = raw_shutdown();
+    auto &&success = safe_shutdown();
     if (success < 0) throw Socket::error("shutdown: error");
 }
 
-int Socket::raw_shutdown() {
+int Socket::safe_shutdown() {
     return ::shutdown(descriptor, SHUT_RDWR);
 }
 
@@ -155,8 +148,5 @@ void Socket::set_options(int option) {
 
 std::ostream &operator<<(std::ostream &stream, const Socket &socket) {
     auto &&address = socket.get_address();
-    auto &&host = inet_ntoa(address.sin_addr);
-    auto &&port = address.sin_port;
-    stream << socket.descriptor << " " << host << ":" << port;
-    return stream;
+    return stream << address;
 }

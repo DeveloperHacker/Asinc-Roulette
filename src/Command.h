@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <iterator>
+#include <iostream>
 
 class Command {
 private:
@@ -33,21 +34,19 @@ public:
         return arguments[index];
     }
 
-private:
-    template<typename Out>
-    static void split(const std::string &s, char delimiter, Out result, bool skip) {
-        std::stringstream ss;
-        ss.str(s);
-        std::string item;
-        while (std::getline(ss, item, delimiter)) {
-            if (!skip || item.length() > 0) *(result++) = item;
+    static std::vector<std::string> split(const std::string &string, char delimiter) {
+        std::vector<std::string> result;
+        std::string current;
+        for (auto &&ch : string) {
+            if (ch == delimiter) {
+                result.emplace_back(current);
+                current.clear();
+            } else {
+                current.push_back(ch);
+            }
         }
-    }
-
-    static std::vector<std::string> split(const std::string &string, char delimiter, bool skip = true) {
-        std::vector<std::string> strings;
-        Command::split(string, delimiter, std::back_inserter(strings), skip);
-        return strings;
+        result.push_back(current);
+        return result;
     }
 };
 

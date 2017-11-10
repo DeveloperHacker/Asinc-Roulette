@@ -6,16 +6,23 @@
 #include <iostream>
 #include <algorithm>
 
-const std::string INIT_MESSAGE("init");
-
 class EchoServer : public TCPServer {
+public:
+    enum State {
+        INIT,
+        READY
+    };
+
 private:
-    Transfer transfer;
-    Transfer::State state;
+    std::unordered_map<id_t, std::pair<std::shared_ptr<Transfer>, EchoServer::State>> clients;
 
 public:
     EchoServer(int domain, int type, int protocol, address_t &address);
 
 protected:
-    bool handle(const std::string &message, SendSocket &socket) override;
+    bool handle(const std::string &message, id_t id, SendSocket &socket) override;
+
+    void connect_handle(id_t id) override;
+
+    void disconnect_handle(id_t id) override;
 };
