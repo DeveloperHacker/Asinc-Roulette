@@ -34,8 +34,7 @@ bool TCPClient::start() {
     });
     output_thread = std::thread([this] {
         this->safe_run([this]() {
-            SendSocket send_socket(socket);
-            output(send_socket);
+            output();
         });
     });
     return true;
@@ -57,4 +56,12 @@ void TCPClient::stop() {
         socket.safe_shutdown();
         socket.safe_close();
     }
+}
+
+void TCPClient::send(const char *message) {
+    socket.send(message);
+}
+
+void TCPClient::send(const std::string &message) {
+    socket.send(message);
 }

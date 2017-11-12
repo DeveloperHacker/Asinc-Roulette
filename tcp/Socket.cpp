@@ -1,11 +1,8 @@
 
 #include "Socket.h"
 
-#include <iostream>
 #include <algorithm>
-#include <sys/socket.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 Socket::Socket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
 
@@ -61,17 +58,17 @@ std::string Socket::receive() {
 
 void Socket::send(const char *message) {
     std::string data(message);
-    data.append("\r\n", 2);
-    for (unsigned left = 0; left < data.length(); left += BUFFER_SIZE) {
+    send(data);
+}
+
+void Socket::send(std::string message) {
+    message.append("\r\n", 2);
+    for (unsigned left = 0; left < message.length(); left += BUFFER_SIZE) {
         auto right = left + BUFFER_SIZE;
-        auto sub_data = data.substr(left, right);
+        auto sub_data = message.substr(left, right);
         auto length = ::send(descriptor, sub_data.c_str(), BUFFER_SIZE, 0);
         if (length <= 0) throw Socket::error("send: connection refused");
     }
-}
-
-void Socket::send(const std::string &message) {
-    send(message.c_str());
 }
 
 int Socket::safe_close() {

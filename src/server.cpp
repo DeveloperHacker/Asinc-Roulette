@@ -1,9 +1,7 @@
 
 #include "Command.h"
-#include "simple/EchoServer.h"
-#include "global.h"
-#include <functional>
-#include <iomanip>
+#include "../simple/EchoServer.h"
+#include "../simple/config.h"
 
 using CommandArgs = std::vector<std::string>;
 using CommndExpr = std::function<bool(const CommandArgs &)>;
@@ -49,17 +47,12 @@ void init(TCPServer &server, Commands &commands) {
         for (auto &&argument : arguments) {
             int id;
             if (str2int(id, argument) && id >= 0) {
-                if (server.kill(static_cast<id_t>(id)) == 1) {
-                    std::cerr << "connection " << id << " hasn't found" << std::endl;
-                } else {
-                    std::cout << "connection " << id << " closed" << std::endl;
-                }
+                server.kill(static_cast<id_t>(id));
             } else if (argument == "--all" || argument == "-a") {
                 auto &&connections = server.get_connections();
                 for (auto &&connection: connections) {
                     server.kill(connection.first);
                 }
-                std::cout << "all connection closed" << std::endl;
             } else {
                 std::cerr << "kill argument " << argument << " hasn't recognized" << std::endl;
             }
@@ -74,12 +67,39 @@ void init(TCPServer &server, Commands &commands) {
         auto &&connections = server.get_connections();
         if (connections.empty()) {
             std::cout << "connections list is empty" << std::endl;
+            return true;
         }
+        std::cout << std::setw(4) << "id" << std::setw(15) << "host" << std::setw(10) << "port" << std::endl;
         for (auto &&connection: connections) {
             auto &&id = connection.first;
             auto &&address = connection.second;
-            std::cout << std::setw(4) << id << std::setw(10) << address << std::endl;
+            auto &&host = inet_ntoa(address.sin_addr);
+            auto &&port = address.sin_port;
+            std::cout << std::setw(4) << id << std::setw(15) << host << std::setw(10) << port << std::endl;
         }
+        return true;
+    };
+    auto &&send = [&server](const CommandArgs &arguments) -> bool {
+        if (arguments.empty()) {
+            std::cerr << "expected kill argument" << std::endl;
+            return false;
+        }
+        auto &&message = arguments[arguments.size() - 1];
+        if (arguments.size() == 1) {
+            server.broadcast(message);
+            return true;
+        }
+        std::vector<id_t> ids;
+        for (int i = 0; i < arguments.size() - 1; ++i) {
+            auto &&argument = arguments[i];
+            int id;
+            if (str2int(id, argument) && id >= 0) {
+                ids.push_back(static_cast<id_t>(id));
+            } else {
+                std::cerr << "send id " << argument << " hasn't recognized" << std::endl;
+            }
+        }
+        server.send(ids, message);
         return true;
     };
     commands.emplace("help", std::make_pair("show help", help));
@@ -87,10 +107,11 @@ void init(TCPServer &server, Commands &commands) {
     auto &&kill_description = "kill clients, arguments: list of client ids for killing or -a, --all for killing all clients";
     commands.emplace("kill", std::make_pair(kill_description, kill));
     commands.emplace("list", std::make_pair("show list of connected clients", list));
+    commands.emplace("send", std::make_pair("send message to client with specified ids", send));
 }
 
 int main() {
-    auto &&address = Socket::address(global::address::SERVER_PORT);
+    auto &&address = Socket::address(address::SERVER_PORT);
     EchoServer server(AF_INET, SOCK_STREAM, 0, address);
     Commands commands;
     init(server, commands);
@@ -100,13 +121,14 @@ int main() {
         std::getline(std::cin, raw_command);
         Command command(raw_command);
         auto name = command.get_name();
-        if (commands.count(name) == 1) {
-            auto &&foo = commands.find(name)->second.second;
+        auto &&inst = commands.find(name);
+        if (inst != std::end(commands)) {
+            auto &&foo = inst->second.second;
             auto &&success = foo(command.get_arguments());
             if (!success) {
                 std::cerr << "use 'help' command for getting more information" << std::endl;
             }
-        } else {
+        } else if (!name.empty()) {
             std::cerr << "command " << name << " hasn't recognized" << std::endl;
         }
     }

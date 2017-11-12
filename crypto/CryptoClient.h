@@ -1,0 +1,37 @@
+#pragma once
+
+#include "../tcp/TCPClient.h"
+#include "Transfer.h"
+
+class CryptoClient : public TCPClient {
+public:
+    enum State {
+        INIT,
+        WAIT,
+        READY
+    };
+
+private:
+    Transfer transfer;
+    State state;
+
+public:
+    CryptoClient(int domain, int type, int protocol, address_t &address);
+
+protected:
+    virtual void crypto_output() = 0;
+
+    virtual void crypto_input(const std::string &message) = 0;
+
+    void output() override;
+
+    void input(const std::string &message) override;
+
+    void send(const char *message) override;
+
+    void send(const std::string &message) override;
+
+    void raw_send(const char *message);
+
+    void raw_send(const std::string &message);
+};

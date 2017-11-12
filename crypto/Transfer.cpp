@@ -4,6 +4,8 @@
 #include <memory>
 #include "Transfer.h"
 #include "../lib/crypto/base64.h"
+#include "config.h"
+#include "../src/strings.h"
 
 Transfer::Transfer() : state(INIT), crypto() {};
 
@@ -82,17 +84,17 @@ std::vector<unsigned char> construct(const std::shared_ptr<Vector> &vector) {
 std::shared_ptr<Vector> deconstruct(const unsigned char *vector, size_t length) {
     auto type_size = sizeof(size_t);
     size_t data_length, key_length, iv_length, offset = 0;
-    if (offset + type_size >= length) throw Transfer::error("Wrong message format");
+    if (offset + type_size >= length) throw Transfer::error("wrong message format");
     memcpy(&data_length, vector + offset, type_size);
     offset += type_size;
-    if (offset + type_size >= length) throw Transfer::error("Wrong message format");
+    if (offset + type_size >= length) throw Transfer::error("wrong message format");
     memcpy(&key_length, vector + offset, type_size);
     offset += type_size;
-    if (offset + type_size >= length) throw Transfer::error("Wrong message format");
+    if (offset + type_size >= length) throw Transfer::error("wrong message format");
     memcpy(&iv_length, vector + offset, type_size);
     offset += type_size;
     auto size = 3 * type_size + data_length + key_length + iv_length;
-    if (size != length) throw Transfer::error("Wrong message format");
+    if (size != length) throw Transfer::error("wrong message format");
     auto &&data = (unsigned char *) malloc(data_length);
     auto &&key = (unsigned char *) malloc(key_length);
     auto &&iv = (unsigned char *) malloc(iv_length);
@@ -224,4 +226,25 @@ std::vector<unsigned char> Transfer::slave_init(const std::vector<unsigned char>
     std::vector<unsigned char> message(vector->data_length, 0);
     memcpy(message.data(), vector->data, vector->data_length);
     return message;
+}
+
+std::string Transfer::unpack(const std::string &message) {
+    if (message.find(crypto::EMPTY_MESSAGE_PREFIX) == 0) {
+        return utils::drop(message, crypto::EMPTY_MESSAGE_PREFIX.size());
+    }
+    if (message.find(crypto::NORMAL_MESSAGE_PREFIX) == 0) {
+        return utils::drop(message, crypto::NORMAL_MESSAGE_PREFIX.size());
+    }
+    throw Transfer::error("undefined message correction " + message);
+}
+
+std::string Transfer::parse_and_decrypt_if_needed(Transfer &transfer, const std::string &message) {
+    if (message.find(crypto::RAW_MESSAGE_PREFIX) == 0) {
+        return utils::drop(message, crypto::RAW_MESSAGE_PREFIX.size());
+    }
+    if (message.find(crypto::ENCRYPTED_MESSAGE_PREFIX) == 0) {
+        auto &&encrypted = utils::drop(message, crypto::ENCRYPTED_MESSAGE_PREFIX.size());
+        return unpack(transfer.decrypt(encrypted));
+    }
+    throw Transfer::error("undefined message type " + message);
 }

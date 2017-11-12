@@ -23,7 +23,7 @@ void Client::input(const std::string &message) {
     }
 }
 
-std::string Client::output() {
+void Client::output() {
     switch (state) {
         case ::GUEST: {
             break;

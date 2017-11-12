@@ -5,6 +5,7 @@
 #include <vector>
 #include <iterator>
 #include <iostream>
+#include "strings.h"
 
 class Command {
 private:
@@ -13,7 +14,7 @@ private:
 
 public:
     explicit Command(const std::string &command) {
-        auto &&vector = Command::split(command, ' ');
+        auto &&vector = parse(command);
         name = vector[0];
         auto &&begin = vector.begin() + 1;
         auto &&end = vector.end();
@@ -34,12 +35,19 @@ public:
         return arguments[index];
     }
 
-    static std::vector<std::string> split(const std::string &string, char delimiter) {
+    static std::vector<std::string> parse(const std::string &command) {
         std::vector<std::string> result;
         std::string current;
-        for (auto &&ch : string) {
-            if (ch == delimiter) {
-                result.emplace_back(current);
+        bool in_string = false;
+        char quote = ' ';
+        for (auto ch : utils::trim_copy(command)) {
+            if (in_string && ch == quote) {
+                in_string = false;
+            } else if (!in_string && (ch == '\'' || ch == '"')) {
+                in_string = true;
+                quote = ch;
+            } else if (!in_string && ch == ' ') {
+                result.push_back(current);
                 current.clear();
             } else {
                 current.push_back(ch);

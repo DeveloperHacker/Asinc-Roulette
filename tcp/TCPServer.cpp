@@ -27,59 +27,44 @@ bool TCPServer::start() {
     return true;
 }
 
-void task(TCPServer::State &state, std::function<bool(const std::string &, SendSocket &)> handle) {
+void task(Connection &connection, const handle_signature &handle) {
     bool close;
-    Socket socket(state.descriptor);
+    auto &&id = connection.id;
+    auto &&address = connection.address;
+    Socket socket(connection.descriptor);
     try {
         auto &&message = socket.receive();
-        std::cout << "message receive " << socket << " " << message.c_str() << std::endl;
-        SendSocket send_socket(state.descriptor);
-        close = handle(message, send_socket);
-    } catch (Socket::error &ex) {
-        std::cerr << "socket " << socket << " error " << ex.what() << std::endl;
+        close = handle(id, address, message);
+    } catch (std::runtime_error &ex) {
+        std::cerr << TCPServer::format(id, address) << " handle error: " << ex.what() << std::endl;
+        close = true;
+    } catch (...) {
+        std::cerr << TCPServer::format(id, address) << " handle error" << std::endl;
         close = true;
     }
-    std::unique_lock<std::mutex> socket_lock(*state.mutex);
-    state.close = close;
-    state.free = true;
-    if (state.close) {
-        socket.safe_close();
-    }
+    std::unique_lock<std::mutex> socket_lock(*connection.mutex);
+    connection.close = close;
+    connection.free = true;
+    if (connection.close)
+        socket.safe_shutdown();
 }
 
 void TCPServer::disconnect_connections() {
     std::unique_lock<std::mutex> lock(mutex);
-    std::condition_variable event;
-    for (auto &&entry : connections) {
-        auto &&id = entry.first;
-        auto &&state = entry.second;
-        Socket socket(state.descriptor);
-        socket.safe_shutdown();
-        socket.safe_close();
-        std::unique_lock<std::mutex> socket_lock(*state.mutex);
-        event.wait(socket_lock, [&state] { return state.free; });
-        connections.erase(id);
-        descriptors.erase(state.descriptor);
-        delete state.mutex;
-    }
+    connections_iterator it = std::begin(connections);
+    while (it != std::end(connections))
+        it = unsafe_kill(it);
 }
 
 void TCPServer::disconnect_unavailable_connections() {
     std::unique_lock<std::mutex> lock(mutex);
-    auto &&it = std::begin(connections);
+    connections_iterator it = std::begin(connections);
     while (it != std::end(connections)) {
-        auto &&entry = *it;
-        auto &&id = entry.first;
-        auto &&state = entry.second;
-        std::unique_lock<std::mutex> socket_lock(*state.mutex);
-        if (state.close) {
-            it = connections.erase(it);
-            descriptors.erase(state.descriptor);
-            delete state.mutex;
-            disconnect_handle(id);
-            continue;
-        }
-        ++it;
+        auto &&connection = it->second;
+        if (connection.close)
+            it = unsafe_kill(it);
+        else
+            ++it;
     }
 }
 
@@ -88,46 +73,45 @@ void remove_descriptor(int epoll_descriptor, epoll_event event) {
 }
 
 void add_descriptor(int epoll_descriptor, socket_t descriptor) {
-    epoll_event event;
+    epoll_event event{};
     event.events = EPOLLIN | EPOLLHUP;
     event.data.fd = descriptor;
     auto &&ctl_stat = epoll_ctl(epoll_descriptor, EPOLL_CTL_ADD, descriptor, &event);
-    if (ctl_stat == -1) throw Socket::error("descriptor addition failed");
+    if (ctl_stat == -1)
+        throw TCPServer::error("descriptor addition failed");
 }
 
-address_t TCPServer::handle_new_connection(int epoll_descriptor, id_t &max_id) {
+void TCPServer::handle_new_connection(int epoll_descriptor, id_t &max_id) {
     auto &&descriptor = socket.accept();
+    std::unique_lock<std::mutex> lock(mutex);
     auto &&id = max_id++;
-    connect_handle(id);
     Socket socket(descriptor);
     auto &&address = socket.get_address();
-    std::unique_lock<std::mutex> lock(mutex);
-    State state{descriptor, address, true, false, new std::mutex};
-    connections.emplace(id, state);
+    auto &&socket_mutex = std::make_shared<std::mutex>();
+    Connection connection{id, descriptor, address, true, false, socket_mutex};
+    connections.emplace(id, connection);
     descriptors.emplace(descriptor, id);
     add_descriptor(epoll_descriptor, descriptor);
-    return address;
+    connect_handle(id, address);
 }
 
 void TCPServer::handle_connection(socket_t descriptor, ThreadPool &pool) {
-    auto &&id = id_by_descriptor(descriptor);
-    auto &&state = state_by_id(id);
-    std::unique_lock<std::mutex> lock(mutex);
-    std::unique_lock<std::mutex> socket_lock(*state.mutex);
-    if (!state.free) return;
-    state.free = false;
-    auto &&handle = [this, id](const std::string &message, SendSocket &socket) -> bool {
-        this->handle(message, id, socket);
+    auto &&connection = connection_by_descriptor(descriptor);
+    std::unique_lock<std::mutex> socket_lock(*connection.mutex);
+    if (!connection.free) return;
+    connection.free = false;
+    auto &&handle = [this](id_t id, address_t address, const std::string &message) -> bool {
+        this->handle(id, address, message);
     };
-    pool.enqueue(task, std::ref(state), handle);
+    pool.enqueue(task, std::ref(connection), handle);
 }
 
 void TCPServer::run() {
-    std::cout << "server start" << std::endl;
     ThreadPool pool(NUM_THREADS);
     id_t max_id = 0;
     int epoll_descriptor = epoll_create(1);
-    if (epoll_descriptor == -1) throw Socket::error("creation of epoll descriptor is impossible");
+    if (epoll_descriptor == -1)
+        throw TCPServer::error("creation of epoll descriptor is impossible");
     add_descriptor(epoll_descriptor, socket.descriptor);
     epoll_event events[10];
     while (!stop_requests) {
@@ -137,22 +121,16 @@ void TCPServer::run() {
             auto &&descriptor = (socket_t) event.data.fd;
             if (event.events & EPOLLERR) {
                 remove_descriptor(epoll_descriptor, event);
-                auto &&state = state_by_descriptor(descriptor);
-                std::unique_lock<std::mutex> state_lock(*(state.mutex));
-                std::cout << "epoll error in connection " << state.address << std::endl;
-                state.close = true;
+                throw TCPServer::error("epoll error");
             }
             if (event.events & EPOLLHUP) {
                 remove_descriptor(epoll_descriptor, event);
-                auto &&state = state_by_descriptor(descriptor);
-                std::unique_lock<std::mutex> state_lock(*(state.mutex));
-                std::cout << "client disconnected " << state.address << std::endl;
-                state.close = true;
+                auto &&connection = connection_by_descriptor(descriptor);
+                connection.close = true;
             }
             if (event.events & EPOLLIN) {
                 if (descriptor == socket.descriptor) {
-                    auto &&address = handle_new_connection(epoll_descriptor, max_id);
-                    std::cout << "client connected " << address << std::endl;
+                    handle_new_connection(epoll_descriptor, max_id);
                 } else {
                     handle_connection(descriptor, pool);
                 }
@@ -178,62 +156,88 @@ bool TCPServer::stopped() {
     return stop_requests;
 }
 
-fd_set TCPServer::descriptor_set() {
-    std::unique_lock<std::mutex> lock(mutex);
-    fd_set view{};
-    FD_ZERO(&view);
-    FD_SET(socket.descriptor, &view);
-    for (auto &&entry: connections) {
-        auto &&id = entry.first;
-        auto &&state = entry.second;
-        FD_SET(state.descriptor, &view);
-    }
-    return view;
-};
-
 std::unordered_map<id_t, address_t> TCPServer::get_connections() {
     std::unique_lock<std::mutex> lock(mutex);
     std::unordered_map<id_t, address_t> view;
     for (auto &&entry: connections) {
         auto &&id = entry.first;
-        auto &&state = entry.second;
-        view.emplace(id, state.address);
+        auto &&connection = entry.second;
+        view.emplace(id, connection.address);
     }
     return view;
 }
 
-int TCPServer::kill(id_t id) {
+void TCPServer::kill(id_t id) {
     std::unique_lock<std::mutex> lock(mutex);
-    auto &&entry_ptr = connections.find(id);
-    if (entry_ptr == std::end(connections)) return 1;
-    auto &&state = entry_ptr->second;
-    connections.erase(id);
-    descriptors.erase(state.descriptor);
-    delete state.mutex;
-    Socket socket(state.descriptor);
-    socket.safe_shutdown();
-    return socket.safe_close();
+    auto &&it = connections.find(id);
+    unsafe_kill(it);
 }
 
-TCPServer::State &TCPServer::state_by_descriptor(socket_t descriptor) {
+Connection &TCPServer::connection_by_descriptor(socket_t descriptor) {
     std::unique_lock<std::mutex> lock(mutex);
     auto &&desc_entry = descriptors.find(descriptor);
     auto &&id = desc_entry->second;
     auto &&conn_entry = connections.find(id);
-    auto &&state = conn_entry->second;
-    return state;
+    auto &&connection = conn_entry->second;
+    return connection;
 }
 
-id_t TCPServer::id_by_descriptor(socket_t descriptor) {
+connections_iterator TCPServer::unsafe_kill(connections_iterator it) {
+    if (it == std::end(connections)) return it;
+    auto &&id = it->first;
+    auto &&connection = it->second;
+    Socket socket(connection.descriptor);
+    socket.safe_shutdown();
+    socket.safe_close();
+    it = connections.erase(it);
+    descriptors.erase(connection.descriptor);
+    disconnect_handle(id, connection.address);
+    return it;
+}
+
+std::string TCPServer::format(id_t id, address_t address) {
+    std::stringstream stream;
+    stream << "[" << id << " " << address << "]";
+    return stream.str();
+}
+
+void TCPServer::broadcast(const char *message) {
+    std::string m(message);
+    broadcast(m);
+}
+
+void TCPServer::broadcast(const std::string &message) {
     std::unique_lock<std::mutex> lock(mutex);
-    auto &&entry = descriptors.find(descriptor);
-    auto &&id = entry->second;
-    return id;
+    for (auto &&entry: connections) {
+        auto &&connection = entry.second;
+        auto &&descriptor = connection.descriptor;
+        Socket socket(descriptor);
+        socket.send(message);
+    }
 }
 
-TCPServer::State &TCPServer::state_by_id(id_t id) {
+void TCPServer::send(const std::vector<id_t> &ids, const char *message) {
+    std::string m(message);
+    send(ids, m);
+}
+
+void TCPServer::send(const std::vector<id_t> &ids, const std::string &message) {
+    for (auto &&id: ids) {
+        send(id, message);
+    }
+}
+
+void TCPServer::send(id_t id, const char *message) {
+    std::string m(message);
+    send(id, m);
+}
+
+void TCPServer::send(id_t id, const std::string &message) {
     std::unique_lock<std::mutex> lock(mutex);
     auto &&entry = connections.find(id);
-    auto &&state = entry->second;
-    return state;
+    if (entry == std::end(connections)) return;
+    auto &&connection = entry->second;
+    auto &&descriptor = connection.descriptor;
+    Socket socket(descriptor);
+    socket.send(message);
 }

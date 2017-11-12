@@ -15,7 +15,7 @@ public:
 private:
     virtual void input(const std::string &message);
 
-    virtual std::string output();
+    virtual void output();
 };
 
 

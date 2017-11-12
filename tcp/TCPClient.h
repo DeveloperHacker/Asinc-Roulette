@@ -5,15 +5,15 @@
 #include <mutex>
 #include <functional>
 #include "Socket.h"
-#include "SendSocket.h"
-
-using status_t = int;
 
 class TCPClient {
 public:
-    static const status_t WAIT = 0;
-    static const status_t SEND = 1;
-
+    class error : public std::runtime_error {
+        using std::runtime_error::runtime_error;
+    public:
+        ~error() override = default;
+    };
+    
 private:
     bool stop_requests;
 
@@ -34,10 +34,14 @@ public:
 
     void stop();
 
+    virtual void send(const char *message);
+
+    virtual void send(const std::string &message);
+
 protected:
     virtual void input(const std::string &message) = 0;
 
-    virtual void output(SendSocket &socket) = 0;
+    virtual void output() = 0;
 
 private:
     void safe_run(const std::function<void()> &function);

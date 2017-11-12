@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <string>
 #include <stdexcept>
+#include <iomanip>
 
 typedef int socket_t;
 typedef sockaddr_in address_t;
@@ -46,7 +47,7 @@ public:
 
     void send(const char *message);
 
-    void send(const std::string &message);
+    void send(std::string message);
 
     std::string receive();
 
