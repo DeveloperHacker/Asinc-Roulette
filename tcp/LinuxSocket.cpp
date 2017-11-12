@@ -1,30 +1,26 @@
-
-#include "Socket.h"
-
+#include "LinuxSocket.h"
 #include <algorithm>
 #include <unistd.h>
 
-Socket::Socket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
+LinuxSocket::LinuxSocket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
 
-Socket::Socket(socket_t socket) : descriptor(socket) {
+LinuxSocket::LinuxSocket(socket_t socket) : descriptor(socket) {}
 
-}
+LinuxSocket::~LinuxSocket() = default;
 
-Socket::~Socket() = default;
-
-void Socket::bind(const address_t &address) {
+void LinuxSocket::bind(const address_t &address) {
     auto success = ::bind(descriptor, reinterpret_cast<const sockaddr *>(&address), sizeof(address));
-    if (success < 0) throw Socket::error("bind: address already used");
+    if (success < 0) throw LinuxSocket::error("bind: address already used");
 }
 
-void Socket::listen(int backlog) {
+void LinuxSocket::listen(int backlog) {
     auto success = ::listen(descriptor, backlog);
-    if (success < 0) throw Socket::error("listen: error");
+    if (success < 0) throw LinuxSocket::error("listen: error");
 }
 
-void Socket::connect(const address_t &address) {
+void LinuxSocket::connect(const address_t &address) {
     auto success = ::connect(descriptor, reinterpret_cast<const sockaddr *>(&address), sizeof(address));
-    if (success < 0) throw Socket::error("connect: connection hast'n exist");
+    if (success < 0) throw LinuxSocket::error("connect: connection hast'n exist");
 }
 
 int raw_receive(socket_t socket, char *message, size_t length, int flags) {
@@ -32,7 +28,7 @@ int raw_receive(socket_t socket, char *message, size_t length, int flags) {
     while (received < length) {
         char buffer[length];
         auto size = ::recv(socket, buffer, length, flags);
-        if (size <= 0) throw Socket::error("receive: connection refused");
+        if (size <= 0) throw LinuxSocket::error("receive: connection refused");
         for (int i = 0; i < size; i++)
             message[i + received] = buffer[i];
         received += size;
@@ -40,7 +36,7 @@ int raw_receive(socket_t socket, char *message, size_t length, int flags) {
     return received;
 }
 
-std::string Socket::receive() {
+std::string LinuxSocket::receive() {
     std::string buffer;
     auto offset = -1;
     auto index = std::string::npos;
@@ -56,51 +52,51 @@ std::string Socket::receive() {
     return message;
 }
 
-void Socket::send(const char *message) {
+void LinuxSocket::send(const char *message) {
     std::string data(message);
     send(data);
 }
 
-void Socket::send(std::string message) {
+void LinuxSocket::send(std::string message) {
     message.append("\r\n", 2);
     for (unsigned left = 0; left < message.length(); left += BUFFER_SIZE) {
         auto right = left + BUFFER_SIZE;
         auto sub_data = message.substr(left, right);
         auto length = ::send(descriptor, sub_data.c_str(), BUFFER_SIZE, 0);
-        if (length <= 0) throw Socket::error("send: connection refused");
+        if (length <= 0) throw LinuxSocket::error("send: connection refused");
     }
 }
 
-int Socket::safe_close() {
+int LinuxSocket::safe_close() {
     return ::close(descriptor);
 }
 
-void Socket::close() {
+void LinuxSocket::close() {
     auto success = safe_close();
-    if (success < 0) throw Socket::error("close: error");
+    if (success < 0) throw LinuxSocket::error("close: error");
 }
 
 
-socket_t Socket::accept() {
+socket_t LinuxSocket::accept() {
     auto socket = ::accept(descriptor, nullptr, nullptr);
-    if (socket < 0) throw Socket::error("accept: error");
+    if (socket < 0) throw LinuxSocket::error("accept: error");
     return socket;
 }
 
-address_t Socket::get_address() const {
+address_t LinuxSocket::get_address() const {
     address_t address{};
     auto *flatten = reinterpret_cast<sockaddr *>(&address);
     socklen_t address_len = sizeof(address);
     auto success = ::getsockname(descriptor, flatten, &address_len);
-    if (success < 0) throw Socket::error("address: error");
+    if (success < 0) throw LinuxSocket::error("address: error");
     return address;
 }
 
-address_t Socket::address(const std::string &host, uint16_t port) {
+address_t LinuxSocket::address(const std::string &host, uint16_t port) {
     return address(host.c_str(), port);
 }
 
-address_t Socket::address(const char *host, uint16_t port) {
+address_t LinuxSocket::address(const char *host, uint16_t port) {
     address_t address{};
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
@@ -108,7 +104,7 @@ address_t Socket::address(const char *host, uint16_t port) {
     return address;
 }
 
-address_t Socket::address(uint16_t port) {
+address_t LinuxSocket::address(uint16_t port) {
     address_t address{};
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
@@ -116,34 +112,34 @@ address_t Socket::address(uint16_t port) {
     return address;
 }
 
-void Socket::shutdown() {
+void LinuxSocket::shutdown() {
     auto &&success = safe_shutdown();
-    if (success < 0) throw Socket::error("shutdown: error");
+    if (success < 0) throw LinuxSocket::error("shutdown: error");
 }
 
-int Socket::safe_shutdown() {
+int LinuxSocket::safe_shutdown() {
     return ::shutdown(descriptor, SHUT_RDWR);
 }
 
-bool Socket::select() {
+bool LinuxSocket::select() {
     return select(nullptr);
 }
 
-bool Socket::select(timeval *timeout) {
+bool LinuxSocket::select(timeval *timeout) {
     fd_set view{};
     FD_ZERO(&view);
     FD_SET(descriptor, &view);
     auto &&ready = ::select(descriptor + 1, &view, nullptr, nullptr, timeout);
-    if (ready < 0) throw Socket::error("select is ripped");
+    if (ready < 0) throw LinuxSocket::error("select is ripped");
     return static_cast<bool>(ready);
 }
 
-void Socket::set_options(int option) {
+void LinuxSocket::set_options(int option) {
     int one = 1;
     ::setsockopt(descriptor, SOL_SOCKET, option, &one, sizeof(int));
 }
 
-std::ostream &operator<<(std::ostream &stream, const Socket &socket) {
+std::ostream &operator<<(std::ostream &stream, const LinuxSocket &socket) {
     auto &&address = socket.get_address();
     return stream << address;
 }

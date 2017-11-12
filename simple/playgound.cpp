@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include "../crypto/Transfer.h"
-#include "strings.h"
+#include "../crypto/strings.h"
 #include "../crypto/config.h"
 
 void slave2master(Transfer &master, Transfer &slave) {
@@ -11,8 +11,8 @@ void slave2master(Transfer &master, Transfer &slave) {
 
     auto &&encrypt_response = outer_prefix + slave.encrypt(inner_prefix + message);
     std::cout << "Encrypt response = " << encrypt_response << std::endl;
-    auto &&decrypt_response = master.decrypt(utils::drop(encrypt_response, outer_prefix.size()));
-    std::cout << "Decrypt response = " << utils::drop(decrypt_response, inner_prefix.size()) << std::endl;
+    auto &&decrypt_response = master.decrypt(strings::drop(encrypt_response, outer_prefix.size()));
+    std::cout << "Decrypt response = " << strings::drop(decrypt_response, inner_prefix.size()) << std::endl;
 }
 
 
@@ -23,8 +23,8 @@ void master2slave(Transfer &master, Transfer &slave) {
 
     auto &&encrypt_response = outer_prefix + master.encrypt(inner_prefix + message);
     std::cout << "Encrypt response = " << encrypt_response << std::endl;
-    auto &&decrypt_response = slave.decrypt(utils::drop(encrypt_response, outer_prefix.size()));
-    std::cout << "Decrypt response = " << utils::drop(decrypt_response, inner_prefix.size()) << std::endl;
+    auto &&decrypt_response = slave.decrypt(strings::drop(encrypt_response, outer_prefix.size()));
+    std::cout << "Decrypt response = " << strings::drop(decrypt_response, inner_prefix.size()) << std::endl;
 }
 
 void transfer_test(int counts) {
@@ -32,7 +32,7 @@ void transfer_test(int counts) {
     Transfer master;
     auto &&rsa_key = prefix + master.public_key();
     std::cout << rsa_key << std::endl;
-    Transfer slave(utils::drop(rsa_key, prefix.size()));
+    Transfer slave(strings::drop(rsa_key, prefix.size()));
     for (int i = 0; i < counts; ++i) {
         slave2master(master, slave);
         master2slave(master, slave);

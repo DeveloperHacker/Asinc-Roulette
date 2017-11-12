@@ -5,7 +5,7 @@
 #include "Transfer.h"
 #include "../lib/crypto/base64.h"
 #include "config.h"
-#include "../src/strings.h"
+#include "strings.h"
 
 Transfer::Transfer() : state(INIT), crypto() {};
 
@@ -230,20 +230,20 @@ std::vector<unsigned char> Transfer::slave_init(const std::vector<unsigned char>
 
 std::string Transfer::unpack(const std::string &message) {
     if (message.find(crypto::EMPTY_MESSAGE_PREFIX) == 0) {
-        return utils::drop(message, crypto::EMPTY_MESSAGE_PREFIX.size());
+        return strings::drop(message, crypto::EMPTY_MESSAGE_PREFIX.size());
     }
     if (message.find(crypto::NORMAL_MESSAGE_PREFIX) == 0) {
-        return utils::drop(message, crypto::NORMAL_MESSAGE_PREFIX.size());
+        return strings::drop(message, crypto::NORMAL_MESSAGE_PREFIX.size());
     }
     throw Transfer::error("undefined message correction " + message);
 }
 
 std::string Transfer::parse_and_decrypt_if_needed(Transfer &transfer, const std::string &message) {
     if (message.find(crypto::RAW_MESSAGE_PREFIX) == 0) {
-        return utils::drop(message, crypto::RAW_MESSAGE_PREFIX.size());
+        return strings::drop(message, crypto::RAW_MESSAGE_PREFIX.size());
     }
     if (message.find(crypto::ENCRYPTED_MESSAGE_PREFIX) == 0) {
-        auto &&encrypted = utils::drop(message, crypto::ENCRYPTED_MESSAGE_PREFIX.size());
+        auto &&encrypted = strings::drop(message, crypto::ENCRYPTED_MESSAGE_PREFIX.size());
         return unpack(transfer.decrypt(encrypted));
     }
     throw Transfer::error("undefined message type " + message);

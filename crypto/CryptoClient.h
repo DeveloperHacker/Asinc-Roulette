@@ -18,6 +18,14 @@ private:
 public:
     CryptoClient(int domain, int type, int protocol, address_t &address);
 
+    void send(const char *message) override;
+
+    void send(const std::string &message) override;
+
+    void raw_send(const char *message);
+
+    void raw_send(const std::string &message);
+
 protected:
     virtual void crypto_output() = 0;
 
@@ -26,12 +34,4 @@ protected:
     void output() override;
 
     void input(const std::string &message) override;
-
-    void send(const char *message) override;
-
-    void send(const std::string &message) override;
-
-    void raw_send(const char *message);
-
-    void raw_send(const std::string &message);
 };

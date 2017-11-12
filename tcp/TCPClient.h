@@ -30,7 +30,7 @@ public:
 
     bool start();
 
-    void join();
+    virtual void join();
 
     void stop();
 

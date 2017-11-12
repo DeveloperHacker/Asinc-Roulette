@@ -1,15 +1,15 @@
-#include "ReadClient.h"
+#include "Client.h"
 
-ReadClient::ReadClient(int domain, int type, int protocol, address_t &address
+Client::Client(int domain, int type, int protocol, address_t &address
 ) : CryptoClient(domain, type, protocol, address) {
 }
 
-void ReadClient::crypto_output() {
+void Client::crypto_output() {
     std::string message;
     std::getline(std::cin, message);
     send(message);
 }
 
-void ReadClient::crypto_input(const std::string &message) {
+void Client::crypto_input(const std::string &message) {
     std::cout << "message receive " << message << std::endl;
 }
