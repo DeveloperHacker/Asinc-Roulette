@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.8)
 
 project(async_roulette)
 
+# set(CMAKE_VERBOSE_MAKEFILE on)
+
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -g3 -lcrypto")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpthread -lcrypto -lsqlite3 -g3")
 
 set(JSON lib/json/src/json.hpp)
 set(CRYPTO lib/crypto/base64.cpp lib/crypto/base64.h lib/crypto/Crypto.cpp lib/crypto/Crypto.h)
@@ -42,3 +44,7 @@ set(SERVER_HANDLERS src/handlers/ServerHandlers.cpp src/handlers/ServerHandlers.
 add_executable(server src/config.h src/server.cpp ${SERVER} ${SERVER_COMMANDS} ${SERVER_HANDLERS})
 add_executable(client src/config.h src/client.cpp ${CLIENT} ${CLIENT_COMMANDS} ${CLIENT_HANDLERS})
 #add_executable(playground simple/playgound.cpp ${TRANSFER})
+add_executable(init src/config.h src/init.cpp ${DATABASE})
+
+target_link_libraries(server /usr/local/lib/libSQLiteCpp.a)
+target_link_libraries(init /usr/local/lib/libSQLiteCpp.a)

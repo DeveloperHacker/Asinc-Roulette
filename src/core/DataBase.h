@@ -2,7 +2,7 @@
 
 #include "../../commands/permitions.h"
 #include <string>
-#include <bits/shared_ptr.h>
+#include <memory>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 class DataBase {
@@ -26,4 +26,6 @@ public:
     void add_permition(const std::string &login, const std::string &password, permition_t permition);
 
     void set_permition(const std::string &login, permition_t permition);
+
+    static void init(const std::string &name);
 };

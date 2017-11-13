@@ -4,48 +4,44 @@
 
 using json = nlohmann::json;
 
-using impl_t = std::function<bool(Server &, id_t, address_t, const std::string &)>;
+using impl_t = std::function<bool(Server &, id_t, address_t, json &)>;
 
 ServerHandlers::ServerHandlers() : Handlers() {
-    impl_t login_handler = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
-        auto &&request = json::parse(message);
+    impl_t login_handler = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
         auto &&password = request[parts::PASSWORD];
         server.login(id, login, password);
         return false;
     };
-    impl_t logout = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
+    impl_t logout = [](Server &server, id_t id, address_t address, json &request) -> bool {
         server.logout(id);
         return false;
     };
-    impl_t join = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
-        auto &&request = json::parse(message);
+    impl_t join = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&name = request[parts::NAME];
         auto &&password = request[parts::PASSWORD];
         server.join(id, name, password);
         return false;
     };
-    impl_t create = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
-        auto &&request = json::parse(message);
+    impl_t create = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&name = request[parts::NAME];
         auto &&password = request[parts::PASSWORD];
         server.create(id, name, password);
         return false;
     };
-    impl_t leave = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
+    impl_t leave = [](Server &server, id_t id, address_t address, json &request) -> bool {
         server.leave(id);
         return false;
     };
-    impl_t tables = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
+    impl_t tables = [](Server &server, id_t id, address_t address, json &request) -> bool {
         server.tables(id);
         return false;
     };
-    impl_t users = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
+    impl_t users = [](Server &server, id_t id, address_t address, json &request) -> bool {
         server.users(id);
         return false;
     };
-    impl_t write = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
-        auto &&request = json::parse(message);
+    impl_t write = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&msg = request[parts::MESSAGE];
         if (request.count(parts::LOGIN) > 0) {
             auto &&login = request[parts::LOGIN];
@@ -55,22 +51,20 @@ ServerHandlers::ServerHandlers() : Handlers() {
         }
         return false;
     };
-    impl_t disconnect = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
+    impl_t disconnect = [](Server &server, id_t id, address_t address, json &request) -> bool {
         return true;
     };
-    impl_t sync = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
+    impl_t sync = [](Server &server, id_t id, address_t address, json &request) -> bool {
         server.sync(id);
         return false;
     };
-    impl_t registration = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
-        auto &&request = json::parse(message);
+    impl_t registration = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
         auto &&password = request[parts::PASSWORD];
         server.registration(id, login, password);
         return false;
     };
-    impl_t set_permition = [](Server &server, id_t id, address_t address, const std::string &message) -> bool {
-        auto &&request = json::parse(message);
+    impl_t set_permition = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
         auto &&permition = request[parts::PERMITION];
         server.set_permition(id, login, permition);

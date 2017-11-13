@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-using permition_t = uint8_t;
+using permition_t = int;
 
 namespace permitions {
     static const permition_t NONE = 0;  // clients without commands

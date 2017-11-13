@@ -14,7 +14,7 @@ namespace parts {
     const std::string DATA("data"); // NOLINT
     const std::string MESSAGE("message"); // NOLINT
     const std::string LOGIN("login"); // NOLINT
-    const std::string PASSWORD("login"); // NOLINT
+    const std::string PASSWORD("password"); // NOLINT
     const std::string NAME("name"); // NOLINT
     const std::string ROLE("role"); // NOLINT
     const std::string PERMITION("permition"); // NOLINT
@@ -49,4 +49,5 @@ namespace other {
     const std::string CROUPIER("croupier"); // NOLINT
     const std::string PLAYER("player"); // NOLINT
     const size_t MAX_PLAYERS = 5; // NOLINT
+    const std::string DATA_BASE("data_base.db"); // NOLINT
 }

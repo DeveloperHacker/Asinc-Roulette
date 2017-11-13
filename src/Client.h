@@ -20,12 +20,11 @@ private:
 public:
     Client(int domain, int type, int protocol, address_t &address);
 
-    void join() override;
-
     void login(const std::string &login, const std::string &password);
 
     void logout();
 
+    using CryptoClient::join;
     void join(const std::string &name, const std::string &password);
 
     void create(const std::string &name, const std::string &password);

@@ -14,11 +14,14 @@ Client::Client(int domain, int type, int protocol, address_t &address
 void Client::crypto_input(const std::string &message) {
     try {
         auto &&response = json::parse(message);
+        std::cout << response.dump(4) << std::endl;
         auto &&status = response[parts::STATUS];
-        auto &&command = response[parts::COMMAND].dump();
-        auto &&data = response[parts::DATA].dump();
-        if (status == stats::ERROR)
-            throw Client::error("Error " + command + ": " + data);
+        std::string command = response[parts::COMMAND];
+        if (status == stats::ERROR) {
+            std::string msg = response[parts::MESSAGE];
+            throw Client::error("error " + command + ": " + msg);
+        }
+        auto &&data = response[parts::DATA];
         handlers->execute(permition, command, *this, data);
     } catch (ClientHandlers::error &ex) {
         std::cerr << ex.what() << std::endl;
@@ -116,15 +119,11 @@ void Client::registration(const std::string &login, const std::string &password)
 }
 
 void Client::set_permition(const std::string &login, permition_t permition) {
-    if (permition & !permitions::AUTH != 0)
+    if (permition & ~permitions::AUTH)
         throw Client::error("changing permition on not AUTH permitions is impossible");
     json request;
     request[parts::COMMAND] = commands::SET_PERMITION;
     request[parts::DATA][parts::LOGIN] = login;
     request[parts::DATA][parts::PERMITION] = permition;
     send(request.dump());
-}
-
-void Client::join() {
-    TCPClient::join();
 }

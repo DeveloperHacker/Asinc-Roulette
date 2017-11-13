@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <functional>
 #include "../../commands/permitions.h"
+#include <iostream>
+#include <bitset>
 
 template<typename R, typename... Args>
 class Handlers {
@@ -29,7 +31,8 @@ public:
         if (entry == std::end(handlers))
             throw error("handler with name " + name + " hasn't found");
         auto &&needed_permition = entry->second.first;
-        if (permition & needed_permition == 0)
+        std::cout << std::bitset<8>(permition) << " " << std::bitset<8>(needed_permition) << std::endl;
+        if ((permition & needed_permition) == 0)
             throw error("execute permition denied");
         auto &&handler = entry->second.second;
         return handler(args...);

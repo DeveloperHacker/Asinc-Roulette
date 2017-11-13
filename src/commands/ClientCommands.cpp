@@ -10,7 +10,7 @@ void ClientCommands::init(Client &client) {
         for (auto &&entry: get_commands_info(permition)) {
             auto &&name = entry.first;
             auto &&description = entry.second;
-            std::cout << " " << std::setw(10) << std::left << name << std::left << description << std::endl;
+            std::cout << " " << std::setw(15) << std::left << name << std::left << description << std::endl;
         }
     };
     impl_t login = [this, &client](permition_t permition, const args_t &arguments) {

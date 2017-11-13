@@ -22,7 +22,7 @@ private:
     DataBase data_base;
     std::shared_ptr<ServerHandlers> handlers;
     std::unordered_map<std::string, id_t> ids;
-    std::unordered_map<id_t, std::pair<std::string, permition_t>> auth;
+    std::unordered_map<id_t, std::tuple<std::string, permition_t>> auth;
     std::unordered_map<std::string, std::string> croupiers;
     std::unordered_map<std::string, std::string> players;
     std::unordered_map<std::string, session_t> sessions;
