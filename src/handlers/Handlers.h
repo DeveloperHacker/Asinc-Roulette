@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <functional>
-#include "../../commands/permitions.h"
+#include "../commands/permitions.h"
 #include <iostream>
 #include <bitset>
 
@@ -27,7 +27,6 @@ public:
     }
 
     virtual R execute(permition_t permition, const std::string &name, Args... args) {
-        std::cout << "execute command " << name << " with permition " << std::bitset<8>(permition) << std::endl;
         auto &&entry = handlers.find(name);
         if (entry == std::end(handlers))
             throw error("handler with name " + name + " hasn't found");

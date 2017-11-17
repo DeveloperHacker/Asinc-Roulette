@@ -25,9 +25,12 @@ void CryptoClient::output() {
 void CryptoClient::input(const std::string &message) {
     if (state == INIT)
         throw TCPClient::error("client must send rsa public key before receiving message");
-    auto &&decrypted = Transfer::parse_and_decrypt_if_needed(transfer, message);
+    std::cout << "[DEBUG] ERECV " << message << std::endl;
+    auto &&decrypted = Transfer::unpack_and_decrypt_if_needed(transfer, message);
+    std::cout << "[DEBUG] DRECV " << decrypted << std::endl;
     switch (state) {
-        case INIT:break;
+        case INIT:
+            break;
         case WAIT: {
             state = READY;
             if (decrypted != crypto::INIT_MESSAGE)
@@ -47,10 +50,10 @@ void CryptoClient::send(const char *message) {
 }
 
 void CryptoClient::send(const std::string &message) {
-    bool empty = message.empty();
-    auto &&prefix = empty ? crypto::EMPTY_MESSAGE_PREFIX : crypto::NORMAL_MESSAGE_PREFIX;
-    auto &&encrypted = transfer.encrypt(prefix + message);
-    TCPClient::send(crypto::ENCRYPTED_MESSAGE_PREFIX + encrypted);
+    std::cout << "[DEBUG] MSEND " << message << std::endl;
+    auto &&encrypted = Transfer::pack_and_encrypt_if_needed(transfer, message);
+    std::cout << "[DEBUG] ESEND " << encrypted << std::endl;
+    TCPClient::send(encrypted);
 }
 
 void CryptoClient::raw_send(const char *message) {

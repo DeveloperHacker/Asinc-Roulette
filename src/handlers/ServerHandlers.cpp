@@ -1,53 +1,52 @@
 #include "ServerHandlers.h"
-#include "../config.h"
-#include "../../lib/json/src/json.hpp"
+#include "../core/config.h"
 
 using json = nlohmann::json;
 
 using impl_t = std::function<bool(Server &, id_t, address_t, json &)>;
 
 ServerHandlers::ServerHandlers() : Handlers() {
-    impl_t login_handler = [](Server &server, id_t id, address_t address, json &request) -> bool {
+    impl_t handler_signin = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
         auto &&password = request[parts::PASSWORD];
-        server.login(id, login, password);
+        server.do_signin(id, login, password);
         return false;
     };
-    impl_t logout = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.logout(id);
+    impl_t handler_signout = [](Server &server, id_t id, address_t address, json &request) -> bool {
+        server.do_signout(id);
         return false;
     };
     impl_t join = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&name = request[parts::NAME];
         auto &&password = request[parts::PASSWORD];
-        server.join(id, name, password);
+        server.do_join(id, name, password);
         return false;
     };
     impl_t create = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&name = request[parts::NAME];
         auto &&password = request[parts::PASSWORD];
-        server.create(id, name, password);
+        server.do_create(id, name, password);
         return false;
     };
     impl_t leave = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.leave(id);
+        server.do_leave(id);
         return false;
     };
     impl_t tables = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.send_tables(id);
+        server.do_tables(id);
         return false;
     };
     impl_t users = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.send_users(id);
+        server.do_users(id);
         return false;
     };
     impl_t write = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&msg = request[parts::MESSAGE];
         if (request.count(parts::LOGIN) > 0) {
             auto &&login = request[parts::LOGIN];
-            server.write(id, login, msg);
+            server.do_write(id, login, msg);
         } else {
-            server.write(id, msg);
+            server.do_write(id, msg);
         }
         return false;
     };
@@ -55,44 +54,49 @@ ServerHandlers::ServerHandlers() : Handlers() {
         return true;
     };
     impl_t sync = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.sync(id);
+        server.do_sync(id);
         return false;
     };
-    impl_t registration = [](Server &server, id_t id, address_t address, json &request) -> bool {
+    impl_t handler_signup = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
         auto &&password = request[parts::PASSWORD];
-        server.registration(id, login, password);
+        server.do_signup(id, login, password);
         return false;
     };
     impl_t set_permition = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
         auto &&permition = request[parts::PERMITION];
-        server.set_permition(id, login, permition);
+        server.do_set_permition(id, login, permition);
         return false;
     };
     impl_t command_spin = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.spin(id);
+        server.do_spin(id);
         return false;
     };
     impl_t command_bet = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        std::string type = request[parts::BET_TYPE];
-        int number = request[parts::BET_NUMBER];
-        int value = request[parts::BET_VALUE];
+        std::string type = request[parts::TYPE];
+        int number = request[parts::NUMBER];
+        int value = request[parts::VALUE];
         Server::bet_t bet{type, number, value};
-        server.bet(id, bet);
+        server.do_bet(id, bet);
         return false;
     };
     impl_t command_bets = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.bets(id);
+        server.do_bets(id);
         return false;
     };
     impl_t command_balance = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.balance(id);
+        server.do_balance(id);
+        return false;
+    };
+    impl_t command_kick = [](Server &server, id_t id, address_t address, json &request) -> bool {
+        std::string login = request[parts::LOGIN];
+        server.do_kick(id, login);
         return false;
     };
 
-    add_handler(permitions::GUEST, commands::SIGNUP, login_handler);
-    add_handler(permitions::WAIT, commands::SINGOUT, logout);
+    add_handler(permitions::GUEST, commands::SIGNIN, handler_signin);
+    add_handler(permitions::WAIT, commands::SINGOUT, handler_signout);
     add_handler(permitions::WAIT, commands::JOIN, join);
     add_handler(permitions::STAFF, commands::CREATE, create);
     add_handler(permitions::PLAY, commands::LEAVE, leave);
@@ -101,10 +105,11 @@ ServerHandlers::ServerHandlers() : Handlers() {
     add_handler(permitions::PLAY, commands::WRITE, write);
     add_handler(permitions::ALL, commands::DISCONNECT, disconnect);
     add_handler(permitions::AUTH, commands::SYNC, sync);
-    add_handler(permitions::GUEST, commands::SIGNIN, registration);
+    add_handler(permitions::GUEST, commands::SINGUP, handler_signup);
     add_handler(permitions::ADMIN, commands::SET_PERMITION, set_permition);
     add_handler(permitions::CROUPIER, commands::SPIN, command_spin);
     add_handler(permitions::PLAYER, commands::BET, command_bet);
     add_handler(permitions::PLAY, commands::BETS, command_bets);
     add_handler(permitions::AUTH, commands::BALANCE, command_balance);
+    add_handler(permitions::CROUPIER, commands::KICK, command_kick);
 }

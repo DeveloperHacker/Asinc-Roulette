@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../lib/crypto/Crypto.h"
+#include "../../lib/crypto/Crypto.h"
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -32,10 +32,6 @@ public:
 
     void set_public_key(const std::string &key);
 
-    std::vector<char> encrypt(const std::vector<unsigned char> &message);
-
-    std::vector<unsigned char> decrypt(const std::vector<char> &message);
-
     std::string encrypt(const std::string &message);
 
     std::string decrypt(const std::string &message);
@@ -49,16 +45,18 @@ private:
 
     std::vector<unsigned char> slave_init(const std::vector<unsigned char> &key);
 
-    std::vector<char> rsa_encrypt(const std::vector<unsigned char> &message);
+    std::string rsa_encrypt(const std::vector<unsigned char> &message);
 
-    std::vector<unsigned char> rsa_decrypt(const std::vector<char> &message);
+    std::vector<unsigned char> rsa_decrypt(const std::string &message);
 
-    std::vector<char> aes_encrypt(const std::vector<unsigned char> &message);
+    std::string aes_encrypt(const std::vector<unsigned char> &message);
 
-    std::vector<unsigned char> aes_decrypt(const std::vector<char> &message);
+    std::vector<unsigned char> aes_decrypt(const std::string &message);
 
 public:
-    static std::string parse_and_decrypt_if_needed(Transfer &transfer, const std::string &message);
+    static std::string pack_and_encrypt_if_needed(Transfer &transfer, const std::string &message);
+
+    static std::string unpack_and_decrypt_if_needed(Transfer &transfer, const std::string &message);
 
     static std::string unpack(const std::string &message);
 };

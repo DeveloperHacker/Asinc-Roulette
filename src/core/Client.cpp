@@ -1,5 +1,4 @@
 #include "Client.h"
-#include "../lib/json/src/json.hpp"
 #include "config.h"
 
 using json = nlohmann::json;
@@ -42,7 +41,7 @@ void Client::crypto_output() {
 }
 
 void Client::login(const std::string &login, const std::string &password) {
-    send(commands::SIGNUP, {
+    send(commands::SIGNIN, {
             {parts::LOGIN,    login},
             {parts::PASSWORD, password}
     });
@@ -101,7 +100,7 @@ void Client::sync() {
 }
 
 void Client::registration(const std::string &login, const std::string &password) {
-    send(commands::SIGNIN, {
+    send(commands::SINGUP, {
             {parts::LOGIN,    login},
             {parts::PASSWORD, password}
     });
@@ -129,9 +128,9 @@ void Client::bets() {
 
 void Client::bet(const std::string &type, int number, int value) {
     send(commands::BET, {
-            {parts::BET_TYPE,   type},
-            {parts::BET_NUMBER, number},
-            {parts::BET_VALUE,      value}
+            {parts::TYPE,   type},
+            {parts::NUMBER, number},
+            {parts::VALUE,  value}
     });
 }
 
@@ -142,4 +141,10 @@ void Client::spin() {
 
 void Client::balance() {
     send(commands::BALANCE, {});
+}
+
+void Client::kick(const std::string &login) {
+    send(commands::KICK, {
+            {parts::LOGIN, login}
+    });
 }

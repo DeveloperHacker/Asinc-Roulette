@@ -10,7 +10,9 @@ bool CryptoServer::handle(id_t id, address_t address, const std::string &message
     auto &&client = clients.find(id);
     auto &&transfer = client->second.first;
     auto &&state = client->second.second;
-    auto &&decrypted = Transfer::parse_and_decrypt_if_needed(*transfer, message);
+    std::cout << "[DEBUG] ERECV " << message << std::endl;
+    auto &&decrypted = Transfer::unpack_and_decrypt_if_needed(*transfer, message);
+    std::cout << "[DEBUG] DRECV " << decrypted << std::endl;
     switch (state) {
         case INIT: {
             state = READY;
@@ -78,13 +80,13 @@ void CryptoServer::send(id_t id, const char *message) {
 }
 
 void CryptoServer::send(id_t id, const std::string &message) {
+    std::cout << "[DEBUG] MSEND " << message << std::endl;
     auto &&entry = clients.find(id);
     if (entry == std::end(clients)) return;
     auto &&transfer = entry->second.first;
-    bool empty = message.empty();
-    auto &&prefix = empty ? crypto::EMPTY_MESSAGE_PREFIX : crypto::NORMAL_MESSAGE_PREFIX;
-    auto &&encrypted = transfer->encrypt(prefix + message);
-    TCPServer::send(id, crypto::ENCRYPTED_MESSAGE_PREFIX + encrypted);
+    auto &&encrypted = Transfer::pack_and_encrypt_if_needed(*transfer, message);
+    std::cout << "[DEBUG] ESEND " << encrypted << std::endl;
+    TCPServer::send(id, encrypted);
 }
 
 void CryptoServer::send(const std::vector<id_t> &ids, const char *message) {

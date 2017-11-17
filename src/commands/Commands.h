@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "Command.h"
 #include "permitions.h"
-#include "../tcp/TCPServer.h"
+#include "../../src/tcp/TCPServer.h"
 
 using args_t = std::vector<std::string>;
 using impl_t = std::function<void(permition_t, const args_t &)>;
@@ -30,7 +30,8 @@ private:
 public:
     Commands() = default;
 
-    void add_command(permition_t permition, const std::string &name, const std::string &argument_description, const std::string &description, impl_t &impl);
+    void add_command(permition_t permition, const std::string &name, const std::string &argument_description,
+                     const std::string &description, impl_t &impl);
 
     void parse_and_execute(permition_t permition, const std::string &raw_command);
 

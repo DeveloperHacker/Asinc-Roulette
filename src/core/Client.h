@@ -2,8 +2,8 @@
 
 #include "../crypto/CryptoClient.h"
 #include "../commands/permitions.h"
-#include "handlers/ClientHandlers.h"
-#include "commands/ClientCommands.h"
+#include "../handlers/ClientHandlers.h"
+#include "../commands/ClientCommands.h"
 
 class ClientHandlers;
 
@@ -58,6 +58,8 @@ public:
     void bets();
 
     void bet(const std::string &type, int number, int value);
+    
+    void kick(const std::string &login);
 
 private:
     void send(const std::string &command, const json &data);

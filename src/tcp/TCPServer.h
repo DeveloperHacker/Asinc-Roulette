@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Socket.h"
-#include "../lib/thread_pool/ThreadPool.h"
+#include "../../lib/thread_pool/ThreadPool.h"
 #include <thread>
 #include <unordered_map>
 #include <mutex>
@@ -17,10 +17,13 @@ struct Connection {
 
     bool close;
 
-    std::shared_ptr<std::mutex> mutex;
+    std::mutex mutex;
+
+    Connection(id_t id, socket_t descriptor, address_t address) : // NOLINT
+            id(id), descriptor(descriptor), address(address), free(true), close(false) {}
 };
 
-using connections_iterator = std::unordered_map<id_t, Connection>::const_iterator;
+using connections_iterator = std::unordered_map<id_t, std::shared_ptr<Connection>>::const_iterator;
 
 using handle_signature = std::function<bool(id_t, address_t, const std::string &)>;
 
@@ -46,7 +49,7 @@ private:
 
     std::unordered_map<socket_t, id_t> descriptors;
 
-    std::unordered_map<id_t, Connection> connections;
+    std::unordered_map<id_t, std::shared_ptr<Connection>> connections;
 
     std::mutex mutex;
 
@@ -75,9 +78,9 @@ public:
 
     virtual void send(id_t id, const std::string &message);
 
-    virtual void send(const std::vector<id_t> &ids, const char *message);
+    virtual void send(const std::vector<id_t> &ids, const char *message); // NOLINT
 
-    virtual void send(const std::vector<id_t> &ids, const std::string &message);
+    virtual void send(const std::vector<id_t> &ids, const std::string &message); // NOLINT
 
 protected:
     virtual bool handle(id_t id, address_t address, const std::string &message) = 0;
@@ -97,7 +100,7 @@ private:
 
     void handle_connection(socket_t descriptor, ThreadPool &pool);
 
-    Connection &connection_by_descriptor(socket_t descriptor);
+    std::shared_ptr<Connection> connection_by_descriptor(socket_t descriptor);
 
     connections_iterator unsafe_kill(connections_iterator it);
 

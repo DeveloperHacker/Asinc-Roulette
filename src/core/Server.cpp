@@ -1,6 +1,5 @@
 #include "Server.h"
 #include "config.h"
-#include <ctime>
 
 using json = nlohmann::json;
 
@@ -8,10 +7,11 @@ Server::Server(int domain, int type, int protocol, address_t &address
 ) : CryptoServer(domain, type, protocol, address),
     handlers(std::make_shared<ServerHandlers>()),
     data_base(other::DATA_BASE) {
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    std::srand(std::time(nullptr));
 }
 
 void Server::handle_error(id_t id, const std::string &command, const std::string &message) {
+    std::cerr << "[DEBUG] ERROR " << message << std::endl;
     send(id, stats::ERROR, command, {
             {parts::MESSAGE, message}
     });
@@ -19,7 +19,6 @@ void Server::handle_error(id_t id, const std::string &command, const std::string
 
 bool Server::crypto_handle(id_t id, address_t address, const std::string &message) {
     auto &&request = json::parse(message);
-    std::cout << request.dump(4) << std::endl;
     std::string command = request[parts::COMMAND];
     auto &&data = request[parts::DATA];
     try {
@@ -45,22 +44,22 @@ void Server::connect_handle(id_t id, address_t address) {
 
 void Server::disconnect_handle(id_t id, address_t address) {
     CryptoServer::disconnect_handle(id, address);
-    disconnect(id);
+    do_disconnect(id);
 }
 
-void Server::login(id_t id, const std::string &login, const std::string &password) {
+void Server::do_signin(id_t id, const std::string &login, const std::string &password) {
     if (login2id.count(login) != 0)
         throw Server::error("user with login " + login + " already logged in");
     auto &&user = data_base.get_user(login);
     if (user.password != password)
         throw Server::error("invalid login or password");
     add_user(id, user);
-    send(id, stats::RESOLVED, commands::SIGNUP, {
+    send(id, stats::RESOLVED, commands::SIGNIN, {
             {parts::PERMITION, user.permition}
     });
 }
 
-void Server::logout(id_t id) {
+void Server::do_signout(id_t id) {
     auto &&user = data_base.get_user(other::GUEST);
     add_user(id, user);
     send(id, stats::RESOLVED, commands::SINGOUT, {
@@ -68,21 +67,21 @@ void Server::logout(id_t id) {
     });
 }
 
-void Server::join(id_t id, const std::string &name, const std::string &password) {
+void Server::do_join(id_t id, const std::string &name, const std::string &password) {
     add_player(id, name, password);
     send(id, stats::RESOLVED, commands::JOIN, {
             {parts::PERMITION, permitions::PLAYER}
     });
 }
 
-void Server::create(id_t id, const std::string &name, const std::string &password) {
+void Server::do_create(id_t id, const std::string &name, const std::string &password) {
     add_croupier(id, name, password);
     send(id, stats::RESOLVED, commands::CREATE, {
             {parts::PERMITION, permitions::CROUPIER}
     });
 }
 
-void Server::leave(id_t id) {
+void Server::do_leave(id_t id) {
     auto &&permition = get_permition(id);
     if (permition & permitions::CROUPIER)
         leave_croupier(id);
@@ -90,16 +89,16 @@ void Server::leave(id_t id) {
         leave_player(id);
 }
 
-void Server::write(id_t id, const std::string &message) {
+void Server::do_write(id_t id, const std::string &message) {
     auto &&session = get_session(id);
     for (auto &&login : session.users) {
         auto &&dest_id = get_id(login);
         if (id == dest_id) continue;
-        write(id, login, message);
+        do_write(id, login, message);
     }
 }
 
-void Server::write(id_t id, const std::string &login, const std::string &message) {
+void Server::do_write(id_t id, const std::string &login, const std::string &message) {
     auto &&session = get_session(id);
     if (session.users.count(login) == 0)
         throw Server::error("user with login " + login + " hasn't found");
@@ -109,7 +108,7 @@ void Server::write(id_t id, const std::string &login, const std::string &message
     });
 }
 
-void Server::send_tables(id_t id) {
+void Server::do_tables(id_t id) {
     json list = {};
     for (auto &&entry : sessions) {
         auto &&session = entry.second;
@@ -125,7 +124,7 @@ void Server::send_tables(id_t id) {
     });
 }
 
-void Server::send_users(id_t id) {
+void Server::do_users(id_t id) {
     auto &&session = get_session(id);
     json list = {};
     for (auto &&login : session.users) {
@@ -142,39 +141,35 @@ void Server::send_users(id_t id) {
     });
 }
 
-void Server::disconnect(id_t id) {
+void Server::do_disconnect(id_t id) {
     auto &&login = get_login(id);
     auto &&permition = get_permition(id);
-    try {
-        if (permition & permitions::CROUPIER)
-            leave_croupier(id);
-        if (permition & permitions::PLAYER)
-            leave_player(id);
-    } catch (Server::error &ex) {
-        // ignore
-    }
+    if (permition & permitions::CROUPIER)
+        leave_croupier(id);
+    if (permition & permitions::PLAYER)
+        leave_player(id);
     remove_user(id);
 }
 
-void Server::sync(id_t id) {
+void Server::do_sync(id_t id) {
     auto &&permition = get_permition(id);
     send(id, stats::RESOLVED, commands::SYNC, {
             {parts::PERMITION, permition}
     });
 }
 
-void Server::registration(id_t id, const std::string &login, const std::string &password) {
+void Server::do_signup(id_t id, const std::string &login, const std::string &password) {
     data_base.new_user(login, password, permitions::USER);
-    send(id, stats::RESOLVED, commands::SIGNIN, {});
+    send(id, stats::RESOLVED, commands::SINGUP, {});
 }
 
-void Server::set_permition(id_t id, const std::string &login, permition_t permition) {
+void Server::do_set_permition(id_t id, const std::string &login, permition_t permition) {
     data_base.set_user_permition(login, permition);
     auto &&user_online = login2id.count(login) > 0;
     if (user_online) {
         auto &&user_id = get_id(login);
         local_set_user_permition(user_id, permition);
-        sync(user_id);
+        do_sync(user_id);
     }
     send(id, stats::RESOLVED, commands::SET_PERMITION, {});
 }
@@ -191,7 +186,7 @@ permition_t Server::get_permition(id_t id) {
 
 void Server::leave_croupier(id_t id) {
     auto &&session = get_session(id);
-    for (auto &&login : session.users) {
+    for (auto &&login : std::unordered_set<std::string>(session.users)) {
         if (login == session.croupier) continue;
         leave_player(get_id(login));
     }
@@ -207,7 +202,10 @@ void Server::leave_croupier(id_t id) {
 void Server::leave_player(id_t id) {
     auto &&session = get_session(id);
     auto &&login = get_login(id);
+    if (session.croupier == login)
+        throw Server::error("croupier is not player");
     session.users.erase(login);
+    session.bets.erase(login);
     auto &&permition = data_base.get_user_permition(login);
     local_set_user_permition(id, permition);
     send(id, stats::RESOLVED, commands::LEAVE, {
@@ -222,7 +220,7 @@ std::string Server::get_session_name(id_t id) {
     return entry->second;
 }
 
-Server::session_t Server::get_session(id_t id) {
+Server::session_t &Server::get_session(id_t id) {
     std::string name = get_session_name(id);
     auto &&entry = sessions.find(name);
     if (entry == std::end(sessions))
@@ -269,7 +267,7 @@ void Server::remove_user(id_t id) {
     users.erase(id);
 }
 
-DataBase::user_t Server::get_user(id_t id) {
+DataBase::user_t &Server::get_user(id_t id) {
     auto &&entry = users.find(id);
     if (entry == std::end(users))
         throw Server::error("connection hasn't found");
@@ -295,18 +293,17 @@ void Server::send(id_t id, const std::string &status, const std::string &command
     response[parts::STATUS] = status;
     response[parts::COMMAND] = command;
     response[parts::DATA] = data;
-    std::cout << response.dump(4) << std::endl;
     send(id, response.dump());
 }
 
-void Server::balance(id_t id) {
+void Server::do_balance(id_t id) {
     auto &&user = get_user(id);
     send(id, stats::RESOLVED, commands::BALANCE, {
             {parts::BALANCE, user.balance}
     });
 }
 
-void Server::bet(id_t id, const bet_t &bet) {
+void Server::do_bet(id_t id, const bet_t &bet) {
     validate(bet);
     auto &&session = get_session(id);
     auto &&user = get_user(id);
@@ -316,32 +313,33 @@ void Server::bet(id_t id, const bet_t &bet) {
     if (entry != std::end(session.bets))
         bets = entry->second;
     int value = 0;
-    for (auto &&bet : bets)
-        value += bet.value;
-    if (value > user.balance)
+    for (auto &&_bet : bets)
+        value += _bet.value;
+    if (value + bet.value > user.balance)
         throw Server::error("not enough money");
+    bets.push_back(bet);
+    session.bets[login] = bets;
     send(id, stats::RESOLVED, commands::BET, {});
 }
 
-void Server::bets(id_t id) {
+void Server::do_bets(id_t id) {
     auto &&session = get_session(id);
     json data;
     for (auto &&entry : session.bets) {
         auto &&login = entry.first;
-        auto &&bets = entry.second;
-        for (auto &&bet : bets) {
-            json js_bet = {
-                    {parts::BET_TYPE,   bet.type},
-                    {parts::BET_NUMBER, bet.number},
-                    {parts::BET_VALUE,  bet.value}
-            };
-            data[login].push_back(js_bet);
+        for (auto &&bet : entry.second) {
+            data.push_back({
+                                   {parts::LOGIN,  login},
+                                   {parts::TYPE,   bet.type},
+                                   {parts::NUMBER, bet.number},
+                                   {parts::VALUE,  bet.value}
+                           });
         }
     }
     send(id, stats::RESOLVED, commands::BETS, data);
 }
 
-void Server::spin(id_t id) {
+void Server::do_spin(id_t id) {
     auto &&session = get_session(id);
     auto &&random_number = std::rand() % bets::MAX_NUMBER;
     for (auto &&login: session.users) {
@@ -356,10 +354,16 @@ void Server::spin(id_t id) {
         auto &&user_id = get_id(login);
         for (auto &&bet : bets) {
             auto &&is_positive = wining(random_number, bet);
-            pay(id, bet, is_positive);
+            pay(user_id, bet, is_positive);
         }
     }
     session.bets.clear();
+}
+
+void Server::do_kick(id_t id, const std::string &login) {
+    auto &&user_id = get_id(login);
+    leave_player(user_id);
+    send(id, stats::RESOLVED, commands::KICK, {});
 }
 
 void Server::pay(id_t id, const bet_t &bet, bool is_positive) {
@@ -374,9 +378,9 @@ void Server::pay(id_t id, const bet_t &bet, bool is_positive) {
     user.balance += value;
     data_base.set_user_balance(user.login, user.balance);
     send(id, stats::RESOLVED, commands::PAY, {
-            {parts::BET_TYPE,   bet.type},
-            {parts::BET_NUMBER, bet.number},
-            {parts::BET_VALUE,  value}
+            {parts::TYPE,   bet.type},
+            {parts::NUMBER, bet.number},
+            {parts::VALUE,  value}
     });
 }
 
@@ -389,14 +393,14 @@ void Server::validate(const bet_t &bet) {
     auto &&range = entry->second;
     auto &&norm_number = number + 1;
     auto &&cond = std::get<0>(range) <= norm_number && norm_number <= std::get<1>(range);
-    if (!cond) throw Server::error("illegal bet number " + number);
+    if (!cond) throw Server::error("illegal bet number " + std::to_string(number));
 }
 
 bool Server::wining(int random_number, const bet_t &bet) {
     auto &&number = bet.number;
     auto &&bet_type = bet.type;
     bool is_zero = random_number == 0 || random_number == 37;
-    bool is_red = bets::reds.count(number) > 0;
+    bool is_red = bets::reds.count(random_number) != 0;
     if (bet_type == bets::RED) {
         return is_red;
     } else if (bet_type == bets::BLACK) {

@@ -2,8 +2,8 @@
 
 #include "../tcp/Socket.h"
 #include "../tcp/TCPServer.h"
-#include "../crypto/Transfer.h"
-#include "../crypto/CryptoServer.h"
+#include "../../crypto/Transfer.h"
+#include "../../crypto/CryptoServer.h"
 #include <iostream>
 #include <algorithm>
 

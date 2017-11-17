@@ -1,5 +1,5 @@
 #include "ClientCommands.h"
-#include "../config.h"
+#include "../core/config.h"
 
 ClientCommands::ClientCommands() : Commands() {}
 
@@ -11,12 +11,12 @@ void ClientCommands::init(Client &client) {
             auto &&name = entry.first;
             auto &&argument_description = std::get<0>(entry.second);
             auto &&description = std::get<1>(entry.second);
-            auto &&signature = name + " " + argument_description;
+            auto &&signature = name + " " + argument_description; // NOLINT
             std::cout << " " << std::setw(30) << std::left << signature
                       << std::left << description << std::endl;
         }
     };
-    impl_t signup = [this, &client](permition_t permition, const args_t &arguments) {
+    impl_t signin = [this, &client](permition_t permition, const args_t &arguments) {
         if (arguments.size() != 2)
             throw ClientCommands::error("expected only login and password");
         client.login(arguments[0], arguments[1]);
@@ -81,7 +81,7 @@ void ClientCommands::init(Client &client) {
             throw ClientCommands::error("unexpected sync arguments");
         client.sync();
     };
-    impl_t signin = [this, &client](permition_t permition, const args_t &arguments) {
+    impl_t signup = [this, &client](permition_t permition, const args_t &arguments) {
         if (arguments.size() != 2)
             throw ClientCommands::error("expected only login and password");
         client.registration(arguments[0], arguments[1]);
@@ -119,10 +119,15 @@ void ClientCommands::init(Client &client) {
             throw ClientCommands::error("unexpected balance arguments");
         client.balance();
     };
+    impl_t command_kick = [this, &client](permition_t permition, const args_t &arguments) {
+        if (arguments.size() != 1)
+            throw ClientCommands::error("expected only login");
+        client.kick(arguments[0]);
+    };
 
     std::string help_description("show help");
-    std::string login_description("sign up at the system");
-    std::string logout_description("sign out from the system");
+    std::string signin_description("sign in the system");
+    std::string signout_description("sign out from the system");
     std::string join_description("join to the table");
     std::string create_description("create the table");
     std::string leave_description("leave from the table");
@@ -131,16 +136,17 @@ void ClientCommands::init(Client &client) {
     std::string write_description("write a message into users at the table");
     std::string disconnect_description("disconnect from the server");
     std::string sync_description("synchronize permitions in the system");
-    std::string registration_description("registration in the system");
+    std::string signup_description("signup in the system");
     std::string set_permition_desc("set permitions from user in the system");
     std::string spin_description("spin roulette");
     std::string bet_description("make bet");
     std::string bets_description("get bets of all users");
     std::string balance_description("get balance");
+    std::string kick_description("kick player");
 
     add_command(permitions::ALL, commands::HELP, "", help_description, help);
-    add_command(permitions::GUEST, commands::SIGNUP, "login password", login_description, signup);
-    add_command(permitions::WAIT, commands::SINGOUT, "", logout_description, singout);
+    add_command(permitions::GUEST, commands::SIGNIN, "login password", signin_description, signin);
+    add_command(permitions::WAIT, commands::SINGOUT, "", signout_description, singout);
     add_command(permitions::WAIT, commands::JOIN, "name [password]", join_description, join);
     add_command(permitions::STAFF, commands::CREATE, "name [password]", create_description, create);
     add_command(permitions::PLAY, commands::LEAVE, "", leave_description, leave);
@@ -149,10 +155,11 @@ void ClientCommands::init(Client &client) {
     add_command(permitions::PLAY, commands::WRITE, "[login] message", write_description, write);
     add_command(permitions::ALL, commands::DISCONNECT, "", disconnect_description, disconnect);
     add_command(permitions::AUTH, commands::SYNC, "", sync_description, sync);
-    add_command(permitions::GUEST, commands::SIGNIN, "login password", registration_description, signin);
+    add_command(permitions::GUEST, commands::SINGUP, "login password", signup_description, signup);
     add_command(permitions::ADMIN, commands::SET_PERMITION, "login permition", set_permition_desc, set_permition);
     add_command(permitions::CROUPIER, commands::SPIN, "", spin_description, command_spin);
     add_command(permitions::PLAYER, commands::BET, "type number value", bet_description, command_bet);
     add_command(permitions::PLAY, commands::BETS, "", bets_description, command_bets);
     add_command(permitions::AUTH, commands::BALANCE, "", balance_description, command_balance);
+    add_command(permitions::CROUPIER, commands::KICK, "login", kick_description, command_kick);
 }

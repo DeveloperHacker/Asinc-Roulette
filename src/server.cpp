@@ -1,8 +1,8 @@
 
-#include "../commands/Command.h"
-#include "config.h"
-#include "../tcp/Socket.h"
-#include "Server.h"
+#include "commands/Command.h"
+#include "core/config.h"
+#include "tcp/Socket.h"
+#include "core/Server.h"
 #include "commands/ServerCommands.h"
 
 int main() {

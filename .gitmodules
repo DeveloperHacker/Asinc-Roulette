@@ -7,3 +7,6 @@
 [submodule "pool"]
 	path = lib/thread_pool
 	url = git@github.com:progschj/ThreadPool.git
+[submodule "base64"]
+	path = lib/base64
+	url = git@github.com:ReneNyffenegger/cpp-base64.git

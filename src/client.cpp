@@ -1,6 +1,6 @@
-#include "../tcp/Socket.h"
-#include "config.h"
-#include "Client.h"
+#include "tcp/Socket.h"
+#include "core/config.h"
+#include "core/Client.h"
 
 
 int main() {

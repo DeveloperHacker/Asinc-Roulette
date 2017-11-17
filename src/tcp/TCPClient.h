@@ -13,7 +13,7 @@ public:
     public:
         ~error() override = default;
     };
-    
+
 private:
     bool stop_requests;
 

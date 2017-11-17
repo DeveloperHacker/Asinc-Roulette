@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Handlers.h"
-#include "../../tcp/Socket.h"
-#include "../Server.h"
+#include "../../src/tcp/Socket.h"
+#include "../core/Server.h"
 #include "../../lib/json/src/json.hpp"
 
 using json = nlohmann::json;

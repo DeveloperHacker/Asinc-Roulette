@@ -27,11 +27,11 @@ bool TCPServer::start() {
     return true;
 }
 
-void task(Connection &connection, const handle_signature &handle) {
+void task(std::shared_ptr<Connection> connection, const handle_signature &handle) {
     bool close;
-    auto &&id = connection.id;
-    auto &&address = connection.address;
-    Socket socket(connection.descriptor);
+    auto &&id = connection->id;
+    auto &&address = connection->address;
+    Socket socket(connection->descriptor);
     try {
         auto &&message = socket.receive();
         close = handle(id, address, message);
@@ -42,10 +42,10 @@ void task(Connection &connection, const handle_signature &handle) {
         std::cerr << TCPServer::format(id, address) << " handle error" << std::endl;
         close = true;
     }
-    std::unique_lock<std::mutex> socket_lock(*connection.mutex);
-    connection.close = close;
-    connection.free = true;
-    if (connection.close)
+    std::unique_lock<std::mutex> socket_lock(connection->mutex);
+    connection->close = close;
+    connection->free = true;
+    if (connection->close)
         socket.safe_shutdown();
 }
 
@@ -61,7 +61,7 @@ void TCPServer::disconnect_unavailable_connections() {
     connections_iterator it = std::begin(connections);
     while (it != std::end(connections)) {
         auto &&connection = it->second;
-        if (connection.close)
+        if (connection->close)
             it = unsafe_kill(it);
         else
             ++it;
@@ -87,9 +87,8 @@ void TCPServer::handle_new_connection(int epoll_descriptor, id_t &max_id) {
     auto &&id = max_id++;
     Socket socket(descriptor);
     auto &&address = socket.get_address();
-    auto &&socket_mutex = std::make_shared<std::mutex>();
-    Connection connection{id, descriptor, address, true, false, socket_mutex};
-    connections.emplace(id, connection);
+    auto &&connection_ptr = std::make_shared<Connection>(id, descriptor, address);
+    connections.emplace(id, connection_ptr);
     descriptors.emplace(descriptor, id);
     add_descriptor(epoll_descriptor, descriptor);
     connect_handle(id, address);
@@ -97,13 +96,13 @@ void TCPServer::handle_new_connection(int epoll_descriptor, id_t &max_id) {
 
 void TCPServer::handle_connection(socket_t descriptor, ThreadPool &pool) {
     auto &&connection = connection_by_descriptor(descriptor);
-    std::unique_lock<std::mutex> socket_lock(*connection.mutex);
-    if (!connection.free) return;
-    connection.free = false;
+    std::unique_lock<std::mutex> socket_lock(connection->mutex);
+    if (!connection->free) return;
+    connection->free = false;
     auto &&handle = [this](id_t id, address_t address, const std::string &message) -> bool {
         this->handle(id, address, message);
     };
-    pool.enqueue(task, std::ref(connection), handle);
+    pool.enqueue(task, connection, handle);
 }
 
 void TCPServer::run() {
@@ -126,7 +125,7 @@ void TCPServer::run() {
             if (event.events & EPOLLHUP) {
                 remove_descriptor(epoll_descriptor, event);
                 auto &&connection = connection_by_descriptor(descriptor);
-                connection.close = true;
+                connection->close = true;
             }
             if (event.events & EPOLLIN) {
                 if (descriptor == socket.descriptor) {
@@ -162,7 +161,7 @@ std::unordered_map<id_t, address_t> TCPServer::get_connections() {
     for (auto &&entry: connections) {
         auto &&id = entry.first;
         auto &&connection = entry.second;
-        view.emplace(id, connection.address);
+        view.emplace(id, connection->address);
     }
     return view;
 }
@@ -173,11 +172,15 @@ void TCPServer::kill(id_t id) {
     unsafe_kill(it);
 }
 
-Connection &TCPServer::connection_by_descriptor(socket_t descriptor) {
+std::shared_ptr<Connection> TCPServer::connection_by_descriptor(socket_t descriptor) {
     std::unique_lock<std::mutex> lock(mutex);
     auto &&desc_entry = descriptors.find(descriptor);
+    if (desc_entry == std::end(descriptors))
+        throw TCPServer::error("connection don't found");
     auto &&id = desc_entry->second;
     auto &&conn_entry = connections.find(id);
+    if (conn_entry == std::end(connections))
+        throw TCPServer::error("connection don't found");
     auto &&connection = conn_entry->second;
     return connection;
 }
@@ -186,12 +189,12 @@ connections_iterator TCPServer::unsafe_kill(connections_iterator it) {
     if (it == std::end(connections)) return it;
     auto &&id = it->first;
     auto &&connection = it->second;
-    Socket socket(connection.descriptor);
+    Socket socket(connection->descriptor);
     socket.safe_shutdown();
     socket.safe_close();
     it = connections.erase(it);
-    descriptors.erase(connection.descriptor);
-    disconnect_handle(id, connection.address);
+    descriptors.erase(connection->descriptor);
+    disconnect_handle(id, connection->address);
     return it;
 }
 
@@ -210,7 +213,7 @@ void TCPServer::broadcast(const std::string &message) {
     std::unique_lock<std::mutex> lock(mutex);
     for (auto &&entry: connections) {
         auto &&connection = entry.second;
-        auto &&descriptor = connection.descriptor;
+        auto &&descriptor = connection->descriptor;
         Socket socket(descriptor);
         socket.send(message);
     }
@@ -235,9 +238,10 @@ void TCPServer::send(id_t id, const char *message) {
 void TCPServer::send(id_t id, const std::string &message) {
     std::unique_lock<std::mutex> lock(mutex);
     auto &&entry = connections.find(id);
-    if (entry == std::end(connections)) return;
+    if (entry == std::end(connections))
+        throw TCPServer::error("connection don't found");
     auto &&connection = entry->second;
-    auto &&descriptor = connection.descriptor;
+    auto &&descriptor = connection->descriptor;
     Socket socket(descriptor);
     socket.send(message);
 }

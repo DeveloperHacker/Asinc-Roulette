@@ -1,7 +1,7 @@
 #include <sstream>
 #include <iostream>
 #include "DataBase.h"
-#include "../config.h"
+#include "config.h"
 
 
 DataBase::DataBase(const std::string &name

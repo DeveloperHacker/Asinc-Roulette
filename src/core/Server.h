@@ -2,10 +2,10 @@
 
 #include <unordered_set>
 #include "../crypto/CryptoServer.h"
-#include "handlers/ServerHandlers.h"
+#include "../handlers/ServerHandlers.h"
 #include "../commands/permitions.h"
-#include "core/DataBase.h"
-#include "../lib/json/src/json.hpp"
+#include "../core/DataBase.h"
+#include "../../lib/json/src/json.hpp"
 
 using json = nlohmann::json;
 
@@ -44,41 +44,42 @@ public:
 public:
     Server(int domain, int type, int protocol, address_t &address);
 
-    void login(id_t id, const std::string &login, const std::string &password);
+    void do_signin(id_t id, const std::string &login, const std::string &password);
 
-    void logout(id_t id);
+    void do_signout(id_t id);
 
-    void join(id_t id, const std::string &name, const std::string &password);
+    void do_signup(id_t id, const std::string &login, const std::string &password);
 
-    void create(id_t id, const std::string &name, const std::string &password);
+    void do_join(id_t id, const std::string &name, const std::string &password);
 
-    void leave(id_t id);
+    void do_create(id_t id, const std::string &name, const std::string &password);
 
-    void write(id_t id, const std::string &message);
+    void do_leave(id_t id);
 
-    void write(id_t id, const std::string &login, const std::string &message);
+    void do_write(id_t id, const std::string &message);
 
-    void send_tables(id_t id);
+    void do_write(id_t id, const std::string &login, const std::string &message);
 
-    void send_users(id_t id);
+    void do_tables(id_t id);
 
-    void disconnect(id_t id);
+    void do_users(id_t id);
 
-    void sync(id_t id);
+    void do_disconnect(id_t id);
 
-    void registration(id_t id, const std::string &login, const std::string &password);
+    void do_sync(id_t id);
 
-    void set_permition(id_t id, const std::string &login, permition_t permition);
+    void do_set_permition(id_t id, const std::string &login, permition_t permition);
 
-    void balance(id_t id);
+    void do_balance(id_t id);
 
-    void bets(id_t id);
+    void do_bets(id_t id);
 
-    void bet(id_t id, const bet_t &bet);
+    void do_bet(id_t id, const bet_t &bet);
 
-    void spin(id_t id);
+    void do_spin(id_t id);
 
-public:
+    void do_kick(id_t id, const std::string &login);
+
     static void validate(const bet_t &bet);
 
     static bool wining(int random_number, const bet_t &bet);
@@ -94,7 +95,7 @@ private:
 
     std::string get_session_name(id_t id);
 
-    session_t get_session(id_t id);
+    session_t &get_session(id_t id);
 
     std::string get_login(id_t id);
 
@@ -110,7 +111,7 @@ private:
 
     void remove_user(id_t id);
 
-    DataBase::user_t get_user(id_t id);
+    DataBase::user_t &get_user(id_t id);
 
     void send(id_t id, const std::string &status, const std::string &command, const json &data);
 

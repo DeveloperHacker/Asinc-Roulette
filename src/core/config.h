@@ -30,9 +30,10 @@ namespace parts {
     const std::string LOCK("lock"); // NOLINT
     const std::string BALANCE("balance"); // NOLINT
     const std::string RANDOM_NUMBER("random_number"); // NOLINT
-    const std::string BET_TYPE("bet_type"); // NOLINT
-    const std::string BET_NUMBER("bet_number"); // NOLINT
-    const std::string BET_VALUE("value"); // NOLINT
+    const std::string TYPE("type"); // NOLINT
+    const std::string NUMBER("number"); // NOLINT
+    const std::string VALUE("value"); // NOLINT
+    const std::string BETS("bets"); // NOLINT
 }
 
 namespace stats {
@@ -42,7 +43,8 @@ namespace stats {
 
 namespace commands {
     const std::string HELP("help"); // NOLINT
-    const std::string SIGNUP("signup"); // NOLINT
+    const std::string SIGNIN("signin"); // NOLINT
+    const std::string SINGUP("signup"); // NOLINT
     const std::string SINGOUT("signout"); // NOLINT
     const std::string JOIN("join"); // NOLINT
     const std::string CREATE("create"); // NOLINT
@@ -52,13 +54,13 @@ namespace commands {
     const std::string WRITE("write"); // NOLINT
     const std::string DISCONNECT("disconnect"); // NOLINT
     const std::string SYNC("sync"); // NOLINT
-    const std::string SIGNIN("signin"); // NOLINT
     const std::string SET_PERMITION("set_permition"); // NOLINT
     const std::string BALANCE("balance"); // NOLINT
     const std::string BET("bet"); // NOLINT
     const std::string SPIN("spin"); // NOLINT
     const std::string BETS("bets"); // NOLINT
     const std::string PAY("pay"); // NOLINT
+    const std::string KICK("kick"); // NOLINT
 }
 
 namespace other {

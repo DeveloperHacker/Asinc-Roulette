@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../commands/permitions.h"
+#include "../commands/permitions.h"
 #include <string>
 #include <memory>
 #include <SQLiteCpp/SQLiteCpp.h>

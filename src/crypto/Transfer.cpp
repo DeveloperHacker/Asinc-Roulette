@@ -3,9 +3,9 @@
 #include <iostream>
 #include <memory>
 #include "Transfer.h"
-#include "../lib/crypto/base64.h"
 #include "config.h"
 #include "strings.h"
+#include "../../lib/base64/base64.h"
 
 Transfer::Transfer() : state(INIT), crypto() {};
 
@@ -107,101 +107,69 @@ std::shared_ptr<Vector> deconstruct(const unsigned char *vector, size_t length) 
 }
 
 
-std::vector<char> Transfer::rsa_encrypt(const std::vector<unsigned char> &message) {
+std::string Transfer::rsa_encrypt(const std::vector<unsigned char> &message) {
     unsigned char *encrypted, *key, *iv;
     size_t key_len = 0, iv_len = 0;
     auto length = crypto.rsaEncrypt(message.data(), message.size(), &encrypted, &key, &key_len, &iv, &iv_len);
     if (length == FAILURE) throw Transfer::error("RSA encryption fail");
     auto &&v = std::make_shared<Vector>(length, key_len, iv_len, encrypted, key, iv);
     auto &&constructed = construct(v);
-    auto *b64 = base64Encode(constructed.data(), constructed.size());
-    auto b64_length = strlen(b64) + 1;
-    std::vector<char> result(b64_length, 0);
-    memcpy(result.data(), b64, b64_length);
-    free(b64);
-    return result;
+    return base64_encode(constructed.data(), static_cast<unsigned int>(constructed.size()));
 }
 
-std::vector<unsigned char> Transfer::rsa_decrypt(const std::vector<char> &message) {
-    unsigned char *b64, *decrypted;
-    auto b64_length = base64Decode(message.data(), message.size(), &b64);
-    auto &&v = deconstruct(b64, b64_length);
-    if (b64_length <= 0) throw Transfer::error("Base 64 decode failed");
+std::vector<unsigned char> Transfer::rsa_decrypt(const std::string &message) {
+    unsigned char *decrypted;
+    auto &&b64 = base64_decode(message);
+    auto &&v = deconstruct(reinterpret_cast<const unsigned char *>(b64.c_str()), b64.length());
     auto length = crypto.rsaDecrypt(v->data, v->data_length, v->key, v->key_length, v->iv, v->iv_length, &decrypted);
     if (length == FAILURE) throw Transfer::error("RSA decryption failed");
     std::vector<unsigned char> result(length, 0);
     memcpy(result.data(), decrypted, static_cast<size_t>(length));
     free(decrypted);
-    free(b64);
     return result;
 }
 
-std::vector<char> Transfer::aes_encrypt(const std::vector<unsigned char> &message) {
+std::string Transfer::aes_encrypt(const std::vector<unsigned char> &message) {
     unsigned char *encrypted;
     auto length = crypto.aesEncrypt(message.data(), message.size() + 1, &encrypted);
     if (length == FAILURE) throw Transfer::error("AES encryption fail");
-    auto *b64 = base64Encode(encrypted, static_cast<const size_t>(length));
-    auto b64_length = strlen(b64) + 1;
-    std::vector<char> result(b64_length, 0);
-    memcpy(result.data(), b64, b64_length);
+    auto b64 = base64_encode(encrypted, static_cast<unsigned int>(length));
     free(encrypted);
-    free(b64);
-    return result;
+    return b64;
 }
 
-std::vector<unsigned char> Transfer::aes_decrypt(const std::vector<char> &message) {
-    unsigned char *b64, *decrypted;
-    auto b64_length = base64Decode(message.data(), message.size(), &b64);
-    if (b64_length <= 0) throw Transfer::error("Base 64 decode failed");
-    auto length = crypto.aesDecrypt(b64, static_cast<size_t>(b64_length), &decrypted) - 1;
+std::vector<unsigned char> Transfer::aes_decrypt(const std::string &message) {
+    unsigned char *decrypted;
+    auto &&b64 = base64_decode(message);
+    auto length = crypto.aesDecrypt((unsigned char *) b64.c_str(), b64.length(), &decrypted) - 1;
     if (length == FAILURE) throw Transfer::error("AES decryption failed");
     std::vector<unsigned char> result(length, 0);
     memcpy(result.data(), decrypted, static_cast<size_t>(length));
     free(decrypted);
-    free(b64);
     return result;
 }
 
-std::vector<unsigned char> Transfer::decrypt(const std::vector<char> &message) {
+std::string Transfer::decrypt(const std::string &message) {
+    std::vector<unsigned char> decrypted;
     if (state == INIT) {
         state = READY;
         auto &&key = rsa_decrypt(message);
-        return slave_init(key);
+        decrypted = slave_init(key);
     } else {
-        return aes_decrypt(message);
+        decrypted = aes_decrypt(message);
     }
-}
-
-std::vector<char> Transfer::encrypt(const std::vector<unsigned char> &message) {
-    if (state == INIT) {
-        state = READY;
-        auto &&key = master_init(message);
-        return rsa_encrypt(key);
-    } else {
-        return aes_encrypt(message);
-    }
-}
-
-std::string Transfer::decrypt(const std::string &message) {
-    std::vector<char> data(std::begin(message), std::end(message));
-    std::vector<unsigned char> decrypted = decrypt(data);
     return std::string(reinterpret_cast<char *>(decrypted.data()), decrypted.size());
 }
 
 std::string Transfer::encrypt(const std::string &message) {
     std::vector<unsigned char> data(std::begin(message), std::end(message));
-    std::vector<char> encrypted = encrypt(data);
-    return std::string(encrypted.data(), encrypted.size());
-}
-
-std::string Transfer::encrypt(const char *message) {
-    std::string data(message);
-    return encrypt(data);
-}
-
-std::string Transfer::decrypt(const char *message) {
-    std::string data(message);
-    return decrypt(data);
+    if (state == INIT) {
+        state = READY;
+        auto &&key = master_init(data);
+        return rsa_encrypt(key);
+    } else {
+        return aes_encrypt(data);
+    }
 }
 
 std::vector<unsigned char> Transfer::master_init(const std::vector<unsigned char> &message) {
@@ -229,22 +197,28 @@ std::vector<unsigned char> Transfer::slave_init(const std::vector<unsigned char>
 }
 
 std::string Transfer::unpack(const std::string &message) {
-    if (message.find(crypto::EMPTY_MESSAGE_PREFIX) == 0) {
+    if (message.find(crypto::EMPTY_MESSAGE_PREFIX) != std::string::npos) {
         return strings::drop(message, crypto::EMPTY_MESSAGE_PREFIX.size());
     }
-    if (message.find(crypto::NORMAL_MESSAGE_PREFIX) == 0) {
+    if (message.find(crypto::NORMAL_MESSAGE_PREFIX) != std::string::npos) {
         return strings::drop(message, crypto::NORMAL_MESSAGE_PREFIX.size());
     }
     throw Transfer::error("undefined message correction " + message);
 }
 
-std::string Transfer::parse_and_decrypt_if_needed(Transfer &transfer, const std::string &message) {
-    if (message.find(crypto::RAW_MESSAGE_PREFIX) == 0) {
+std::string Transfer::unpack_and_decrypt_if_needed(Transfer &transfer, const std::string &message) {
+    if (message.find(crypto::RAW_MESSAGE_PREFIX) != std::string::npos) {
         return strings::drop(message, crypto::RAW_MESSAGE_PREFIX.size());
     }
-    if (message.find(crypto::ENCRYPTED_MESSAGE_PREFIX) == 0) {
+    if (message.find(crypto::ENCRYPTED_MESSAGE_PREFIX) != std::string::npos) {
         auto &&encrypted = strings::drop(message, crypto::ENCRYPTED_MESSAGE_PREFIX.size());
         return unpack(transfer.decrypt(encrypted));
     }
     throw Transfer::error("undefined message type " + message);
+}
+
+std::string Transfer::pack_and_encrypt_if_needed(Transfer &transfer, const std::string &message) {
+    bool empty = message.empty();
+    auto &&prefix = empty ? crypto::EMPTY_MESSAGE_PREFIX : crypto::NORMAL_MESSAGE_PREFIX;
+    return crypto::ENCRYPTED_MESSAGE_PREFIX + transfer.encrypt(prefix + message);
 }
