@@ -1,44 +1,34 @@
 #include <sstream>
+#include <iostream>
 #include "DataBase.h"
+#include "../config.h"
 
 
 DataBase::DataBase(const std::string &name
 ) : database(std::make_shared<SQLite::Database>(name, SQLite::OPEN_READWRITE)) {}
 
-permition_t DataBase::get_permition(const std::string &login) {
+
+DataBase::user_t DataBase::get_user(const std::string &login) {
     try {
-        SQLite::Statement query(*database, "SELECT permition FROM users WHERE login = ?");
+        SQLite::Statement query(*database, "SELECT password, permition, balance FROM users WHERE login = ?");
         query.bind(1, login);
         auto &&status = query.executeStep();
-        if (status != 1)
-            throw DataBase::error("invalid login");
-        permition_t permition = query.getColumn(0);
-        return permition;
+        if (!status) throw DataBase::error("user hasn't found");
+        std::string password = query.getColumn(0);
+        permition_t permition = query.getColumn(1);
+        money_t pouch = query.getColumn(2);
+        return DataBase::user_t{login, password, permition, pouch};
     } catch (SQLite::Exception &ex) {
-        throw DataBase::error("invalid login");
+        throw DataBase::error("user hasn't found");
     }
 }
 
-permition_t DataBase::get_permition(const std::string &login, const std::string &password) {
-    try {
-        SQLite::Statement query(*database, "SELECT permition FROM users WHERE login = ? AND password = ?");
-        query.bind(1, login);
-        query.bind(2, password);
-        auto &&status = query.executeStep();
-        if (status != 1)
-            throw DataBase::error("invalid login or password");
-        permition_t permition = query.getColumn(0);
-        return permition;
-    } catch (SQLite::Exception &ex) {
-        throw DataBase::error("invalid login or password");
-    }
-}
-
-void DataBase::add_permition(const std::string &login, const std::string &password, permition_t permition) {
-    SQLite::Statement query(*database, "INSERT INTO users VALUES (?, ?, ?)");
+void DataBase::new_user(const std::string &login, const std::string &password, permition_t permition) {
+    SQLite::Statement query(*database, "INSERT INTO users VALUES (?, ?, ?, ?)");
     query.bind(1, login);
     query.bind(2, password);
     query.bind(3, permition);
+    query.bind(4, other::START_UP_CAPITAL);
     try {
         SQLite::Transaction transaction(*database);
         auto &&status = query.exec();
@@ -48,7 +38,7 @@ void DataBase::add_permition(const std::string &login, const std::string &passwo
     }
 }
 
-void DataBase::set_permition(const std::string &login, permition_t permition) {
+void DataBase::set_user_permition(const std::string &login, permition_t permition) {
     SQLite::Statement query(*database, "UPDATE users SET permition = ? WHERE login = ?");
     query.bind(1, permition);
     query.bind(2, login);
@@ -61,13 +51,51 @@ void DataBase::set_permition(const std::string &login, permition_t permition) {
     }
 }
 
+void DataBase::set_user_balance(const std::string &login, money_t pouch) {
+    SQLite::Statement query(*database, "UPDATE users SET balance = ? WHERE login = ?");
+    query.bind(1, pouch);
+    query.bind(2, login);
+    try {
+        SQLite::Transaction transaction(*database);
+        auto &&status = query.exec();
+        transaction.commit();
+    } catch (std::exception &ex) {
+        throw DataBase::error("user with login " + login + " hasn't found");
+    }
+}
+
+permition_t DataBase::get_user_permition(const std::string &login) {
+    auto &&user = get_user(login);
+    return user.permition;
+}
+
+money_t DataBase::get_user_pouch(const std::string &login) {
+    auto &&user = get_user(login);
+    return user.balance;
+}
+
 void DataBase::init(const std::string &name) {
     SQLite::Database db(name, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
     db.exec("DROP TABLE IF EXISTS users");
     SQLite::Transaction transaction(db);
-    db.exec("CREATE TABLE users (login TEXT NOT NULL PRIMARY KEY, password TEXT NOT NULL, permition INT NOT NULL)");
-    auto &&permition = permitions::ADMIN | permitions::STAFF;
-    db.exec("INSERT INTO users VALUES ('admin', 'admin', " + std::to_string(permition) + ")");
-    db.exec("INSERT INTO users VALUES ('guest', 'guest', " + std::to_string(permitions::NONE) + ")");
+    db.exec("CREATE TABLE users ("
+                    "login TEXT NOT NULL PRIMARY KEY, "
+                    "password TEXT NOT NULL, "
+                    "permition INT NOT NULL,"
+                    "balance INT NOT NULL"
+                    ")");
+    auto &&admin_login = other::ADMIN;
+    auto &&admin_password = other::ADMIN;
+    auto &&permition = std::to_string(permitions::ADMIN | permitions::STAFF);
+    auto &&start_up_capital = std::to_string(other::START_UP_CAPITAL);
+    auto &&guest_permition = std::to_string(permitions::GUEST);
+    auto &&guest_login = other::GUEST;
+    auto &&guest_password = other::GUEST;
+    db.exec("INSERT INTO users VALUES ('admin', 'admin', " + permition + ", 10000000)");
+    db.exec("INSERT INTO users VALUES ("
+                    "'" + guest_login + "', "
+                    "'" + guest_password + "', "
+                    "" + guest_permition + ", "
+                    "" + start_up_capital + ")");
     transaction.commit();
 }

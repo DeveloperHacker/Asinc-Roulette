@@ -11,6 +11,7 @@ using impl_t = std::function<void(permition_t, const args_t &)>;
 struct command_t {
     permition_t permition;
     std::string name;
+    std::string argument_description;
     std::string description;
     impl_t impl;
 };
@@ -29,11 +30,11 @@ private:
 public:
     Commands() = default;
 
-    void add_command(permition_t permition, const std::string &name, const std::string &description, impl_t &impl);
+    void add_command(permition_t permition, const std::string &name, const std::string &argument_description, const std::string &description, impl_t &impl);
 
     void parse_and_execute(permition_t permition, const std::string &raw_command);
 
     void execute(permition_t permition, const Command &command);
 
-    std::unordered_map<std::string, std::string> get_commands_info(permition_t permition);
+    std::unordered_map<std::string, std::tuple<std::string, std::string>> get_commands_info(permition_t permition);
 };

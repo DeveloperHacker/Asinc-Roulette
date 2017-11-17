@@ -12,8 +12,11 @@ public:
             }
             for (auto &&entry: get_commands_info(permition)) {
                 auto &&name = entry.first;
-                auto &&description = entry.second;
-                std::cout << " " << std::setw(10) << std::left << name << std::left << description << std::endl;
+                auto &&argument_description = std::get<0>(entry.second);
+                auto &&description = std::get<1>(entry.second);
+                auto &&signature = name + " " + argument_description;
+                std::cout << " " << std::setw(30) << std::left << signature
+                          << std::left << description << std::endl;
             }
             return true;
         };
@@ -104,14 +107,14 @@ public:
 
         std::string help_description("show help");
         std::string shutdown_description("shutdown server");
-        std::string kill_description("kill clients with specified ids or killing all clients -a, --all");
+        std::string kill_description("kill clients with specified ids");
         std::string list_description("show list of connected clients");
         std::string send_description("send message to client with specified ids");
 
-        add_command(permitions::ADMIN, help_name, help_description, help);
-        add_command(permitions::ADMIN, shutdown_name, shutdown_description, shutdown);
-        add_command(permitions::ADMIN, kill_name, kill_description, kill);
-        add_command(permitions::ADMIN, list_name, list_description, list);
-        add_command(permitions::ADMIN, send_name, send_description, send);
+        add_command(permitions::ADMIN, help_name, "", help_description, help);
+        add_command(permitions::ADMIN, shutdown_name, "", shutdown_description, shutdown);
+        add_command(permitions::ADMIN, kill_name, "[id...] [-a] [--all]", kill_description, kill);
+        add_command(permitions::ADMIN, list_name, "", list_description, list);
+        add_command(permitions::ADMIN, send_name, "[id... ] message", send_description, send);
     }
 };

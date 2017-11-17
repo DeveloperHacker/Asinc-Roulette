@@ -27,11 +27,11 @@ public:
     }
 
     virtual R execute(permition_t permition, const std::string &name, Args... args) {
+        std::cout << "execute command " << name << " with permition " << std::bitset<8>(permition) << std::endl;
         auto &&entry = handlers.find(name);
         if (entry == std::end(handlers))
             throw error("handler with name " + name + " hasn't found");
         auto &&needed_permition = entry->second.first;
-        std::cout << std::bitset<8>(permition) << " " << std::bitset<8>(needed_permition) << std::endl;
         if ((permition & needed_permition) == 0)
             throw error("execute permition denied");
         auto &&handler = entry->second.second;

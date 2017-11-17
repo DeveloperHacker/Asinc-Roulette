@@ -4,6 +4,9 @@
 #include <string>
 #include <memory>
 #include <SQLiteCpp/SQLiteCpp.h>
+#include <unordered_set>
+
+using money_t = int;
 
 class DataBase {
 public:
@@ -13,19 +16,30 @@ public:
         ~error() override = default;
     };
 
+    struct user_t {
+        std::string login;
+        std::string password;
+        permition_t permition;
+        money_t balance;
+    };
+
 private:
     std::shared_ptr<SQLite::Database> database;
 
 public:
     explicit DataBase(const std::string &name);
 
-    permition_t get_permition(const std::string &login);
+    user_t get_user(const std::string &login);
 
-    permition_t get_permition(const std::string &login, const std::string &password);
+    void new_user(const std::string &login, const std::string &password, permition_t permition);
 
-    void add_permition(const std::string &login, const std::string &password, permition_t permition);
+    permition_t get_user_permition(const std::string &login);
 
-    void set_permition(const std::string &login, permition_t permition);
+    money_t get_user_pouch(const std::string &login);
+
+    void set_user_permition(const std::string &login, permition_t permition);
+
+    void set_user_balance(const std::string &login, money_t pouch);
 
     static void init(const std::string &name);
 };

@@ -34,11 +34,11 @@ ServerHandlers::ServerHandlers() : Handlers() {
         return false;
     };
     impl_t tables = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.tables(id);
+        server.send_tables(id);
         return false;
     };
     impl_t users = [](Server &server, id_t id, address_t address, json &request) -> bool {
-        server.users(id);
+        server.send_users(id);
         return false;
     };
     impl_t write = [](Server &server, id_t id, address_t address, json &request) -> bool {
@@ -70,17 +70,41 @@ ServerHandlers::ServerHandlers() : Handlers() {
         server.set_permition(id, login, permition);
         return false;
     };
+    impl_t command_spin = [](Server &server, id_t id, address_t address, json &request) -> bool {
+        server.spin(id);
+        return false;
+    };
+    impl_t command_bet = [](Server &server, id_t id, address_t address, json &request) -> bool {
+        std::string type = request[parts::BET_TYPE];
+        int number = request[parts::BET_NUMBER];
+        int value = request[parts::BET_VALUE];
+        Server::bet_t bet{type, number, value};
+        server.bet(id, bet);
+        return false;
+    };
+    impl_t command_bets = [](Server &server, id_t id, address_t address, json &request) -> bool {
+        server.bets(id);
+        return false;
+    };
+    impl_t command_balance = [](Server &server, id_t id, address_t address, json &request) -> bool {
+        server.balance(id);
+        return false;
+    };
 
-    add_handler(permitions::GUEST, commands::LOGIN, login_handler);
-    add_handler(permitions::AUTH, commands::LOGOUT, logout);
-    add_handler(permitions::AUTH, commands::JOIN, join);
+    add_handler(permitions::GUEST, commands::SIGNUP, login_handler);
+    add_handler(permitions::WAIT, commands::SINGOUT, logout);
+    add_handler(permitions::WAIT, commands::JOIN, join);
     add_handler(permitions::STAFF, commands::CREATE, create);
-    add_handler(permitions::PARTY, commands::LEAVE, leave);
-    add_handler(permitions::AUTH, commands::TABLES, tables);
-    add_handler(permitions::PARTY, commands::USERS, users);
-    add_handler(permitions::PARTY, commands::WRITE, write);
+    add_handler(permitions::PLAY, commands::LEAVE, leave);
+    add_handler(permitions::WAIT, commands::TABLES, tables);
+    add_handler(permitions::PLAY, commands::USERS, users);
+    add_handler(permitions::PLAY, commands::WRITE, write);
     add_handler(permitions::ALL, commands::DISCONNECT, disconnect);
-    add_handler(permitions::ALL, commands::SYNC, sync);
-    add_handler(permitions::GUEST, commands::REGISTRATION, registration);
+    add_handler(permitions::AUTH, commands::SYNC, sync);
+    add_handler(permitions::GUEST, commands::SIGNIN, registration);
     add_handler(permitions::ADMIN, commands::SET_PERMITION, set_permition);
+    add_handler(permitions::CROUPIER, commands::SPIN, command_spin);
+    add_handler(permitions::PLAYER, commands::BET, command_bet);
+    add_handler(permitions::PLAY, commands::BETS, command_bets);
+    add_handler(permitions::AUTH, commands::BALANCE, command_balance);
 }

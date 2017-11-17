@@ -1,5 +1,6 @@
 #include <functional>
 #include "TCPClient.h"
+#include "TCPServer.h"
 
 void TCPClient::safe_run(const std::function<void()> &function) {
     while (!stop_requests) {
@@ -23,7 +24,8 @@ bool TCPClient::start() {
     stop_requests = false;
     input_thread = std::thread([this] {
         this->safe_run([this] {
-            auto &&ready = socket.select();
+            timeval timeout{0, TCPServer::TIMEOUT_USEC};
+            auto &&ready = socket.select(&timeout);
             if (!ready) return;
             auto &&message = socket.receive();
             input(message);

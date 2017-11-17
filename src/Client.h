@@ -18,13 +18,17 @@ private:
     std::shared_ptr<ClientCommands> commands;
 
 public:
+    using CryptoClient::join;
+
+    using CryptoClient::send;
+
+public:
     Client(int domain, int type, int protocol, address_t &address);
 
     void login(const std::string &login, const std::string &password);
 
     void logout();
 
-    using CryptoClient::join;
     void join(const std::string &name, const std::string &password);
 
     void create(const std::string &name, const std::string &password);
@@ -32,6 +36,8 @@ public:
     void leave();
 
     void write(const std::string &message);
+
+    void write(const std::string &login, const std::string &message);
 
     void tables();
 
@@ -44,6 +50,17 @@ public:
     void registration(const std::string &login, const std::string &password);
 
     void set_permition(const std::string &login, permition_t permition);
+
+    void spin();
+
+    void balance();
+
+    void bets();
+
+    void bet(const std::string &type, int number, int value);
+
+private:
+    void send(const std::string &command, const json &data);
 
 protected:
     void crypto_output() override;

@@ -14,14 +14,13 @@ Client::Client(int domain, int type, int protocol, address_t &address
 void Client::crypto_input(const std::string &message) {
     try {
         auto &&response = json::parse(message);
-        std::cout << response.dump(4) << std::endl;
-        auto &&status = response[parts::STATUS];
+        std::string status = response[parts::STATUS];
         std::string command = response[parts::COMMAND];
-        if (status == stats::ERROR) {
-            std::string msg = response[parts::MESSAGE];
-            throw Client::error("error " + command + ": " + msg);
-        }
         auto &&data = response[parts::DATA];
+        if (status == stats::ERROR) {
+            std::string report = data[parts::MESSAGE];
+            throw Client::error("error " + command + ": " + report);
+        }
         handlers->execute(permition, command, *this, data);
     } catch (ClientHandlers::error &ex) {
         std::cerr << ex.what() << std::endl;
@@ -43,87 +42,104 @@ void Client::crypto_output() {
 }
 
 void Client::login(const std::string &login, const std::string &password) {
-    json request;
-    request[parts::COMMAND] = commands::LOGIN;
-    request[parts::DATA][parts::LOGIN] = login;
-    request[parts::DATA][parts::PASSWORD] = password;
-    send(request.dump());
+    send(commands::SIGNUP, {
+            {parts::LOGIN,    login},
+            {parts::PASSWORD, password}
+    });
 }
 
 void Client::logout() {
-    json request;
-    request[parts::COMMAND] = commands::LOGOUT;
-    send(request.dump());
+    send(commands::SINGOUT, {});
 }
 
 void Client::join(const std::string &name, const std::string &password) {
-    json request;
-    request[parts::COMMAND] = commands::JOIN;
-    request[parts::DATA][parts::NAME] = name;
-    request[parts::DATA][parts::PASSWORD] = password;
-    send(request.dump());
+    send(commands::JOIN, {
+            {parts::NAME,     name},
+            {parts::PASSWORD, password}
+    });
 }
 
 void Client::create(const std::string &name, const std::string &password) {
-    json request;
-    request[parts::COMMAND] = commands::CREATE;
-    request[parts::DATA][parts::NAME] = name;
-    request[parts::DATA][parts::PASSWORD] = password;
-    send(request.dump());
+    send(commands::CREATE, {
+            {parts::NAME,     name},
+            {parts::PASSWORD, password}
+    });
 }
 
 void Client::leave() {
-    json request;
-    request[parts::COMMAND] = commands::LEAVE;
-    send(request.dump());
+    send(commands::LEAVE, {});
 }
 
 void Client::write(const std::string &message) {
-    json request;
-    request[parts::COMMAND] = commands::WRITE;
-    request[parts::DATA][parts::MESSAGE] = message;
-    send(request.dump());
+    send(commands::WRITE, {
+            {parts::MESSAGE, message}
+    });
+}
+
+void Client::write(const std::string &login, const std::string &message) {
+    send(commands::WRITE, {
+            {parts::LOGIN,   login},
+            {parts::MESSAGE, message}
+    });
 }
 
 void Client::tables() {
-    json request;
-    request[parts::COMMAND] = commands::TABLES;
-    send(request.dump());
+    send(commands::TABLES, {});
 }
 
 void Client::users() {
-    json request;
-    request[parts::COMMAND] = commands::USERS;
-    send(request.dump());
+    send(commands::USERS, {});
 }
 
 void Client::disconnect() {
-    json request;
-    request[parts::COMMAND] = commands::DISCONNECT;
-    send(request.dump());
+    send(commands::DISCONNECT, {});
     stop();
 }
 
 void Client::sync() {
-    json request;
-    request[parts::COMMAND] = commands::SYNC;
-    send(request.dump());
+    send(commands::SYNC, {});
 }
 
 void Client::registration(const std::string &login, const std::string &password) {
-    json request;
-    request[parts::COMMAND] = commands::REGISTRATION;
-    request[parts::DATA][parts::LOGIN] = login;
-    request[parts::DATA][parts::PASSWORD] = password;
-    send(request.dump());
+    send(commands::SIGNIN, {
+            {parts::LOGIN,    login},
+            {parts::PASSWORD, password}
+    });
 }
 
 void Client::set_permition(const std::string &login, permition_t permition) {
-    if (permition & ~permitions::AUTH)
-        throw Client::error("changing permition on not AUTH permitions is impossible");
+    if (permition & ~permitions::WAIT)
+        throw Client::error("changing permition on not WAIT permitions is impossible");
+    send(commands::SET_PERMITION, {
+            {parts::LOGIN,     login},
+            {parts::PERMITION, permition}
+    });
+}
+
+void Client::send(const std::string &command, const json &data) {
     json request;
-    request[parts::COMMAND] = commands::SET_PERMITION;
-    request[parts::DATA][parts::LOGIN] = login;
-    request[parts::DATA][parts::PERMITION] = permition;
+    request[parts::COMMAND] = command;
+    request[parts::DATA] = data;
     send(request.dump());
+}
+
+void Client::bets() {
+    send(commands::BETS, {});
+}
+
+void Client::bet(const std::string &type, int number, int value) {
+    send(commands::BET, {
+            {parts::BET_TYPE,   type},
+            {parts::BET_NUMBER, number},
+            {parts::BET_VALUE,      value}
+    });
+}
+
+void Client::spin() {
+    send(commands::SPIN, {});
+
+}
+
+void Client::balance() {
+    send(commands::BALANCE, {});
 }
