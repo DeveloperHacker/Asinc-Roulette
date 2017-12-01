@@ -121,11 +121,17 @@ address_t WinSocket::get_address() const {
 }
 
 bool WinSocket::select(timeval *timeout) {
-    throw WinSocket::error("unsupported operation, select with timeout");
+    fd_set view{};
+    FD_ZERO(&view);
+    FD_SET(descriptor, &view);
+    auto &&ready = ::select(descriptor + 1, &view, nullptr, nullptr, timeout);
+    if (ready < 0)
+        throw WinSocket::error("select is ripped");
+    return static_cast<bool>(ready);
 }
 
 bool WinSocket::select() {
-    throw WinSocket::error("unsupported operation, select");
+    return select(nullptr);
 }
 
 address_t address(int domain, int type, int protocol, const char *host, const char *port) {
