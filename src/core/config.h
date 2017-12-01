@@ -53,7 +53,7 @@ namespace commands {
     const std::string WRITE("write"); // NOLINT
     const std::string DISCONNECT("disconnect"); // NOLINT
     const std::string SYNC("sync"); // NOLINT
-    const std::string SET_PERMITION("set_permission"); // NOLINT
+    const std::string SET_PERMISSION("set"); // NOLINT
     const std::string BALANCE("balance"); // NOLINT
     const std::string BET("bet"); // NOLINT
     const std::string SPIN("spin"); // NOLINT

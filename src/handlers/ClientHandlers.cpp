@@ -125,7 +125,7 @@ ClientHandlers::ClientHandlers() : Handlers() {
     add_handler(permissions::ALL, commands::WRITE, write);
     add_handler(permissions::ALL, commands::SYNC, sync);
     add_handler(permissions::ALL, commands::SINGUP, signup);
-    add_handler(permissions::ALL, commands::SET_PERMITION, set_permission);
+    add_handler(permissions::ALL, commands::SET_PERMISSION, set_permission);
     add_handler(permissions::ALL, commands::SPIN, command_spin);
     add_handler(permissions::ALL, commands::BET, command_bet);
     add_handler(permissions::ALL, commands::BETS, command_bets);

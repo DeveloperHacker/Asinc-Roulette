@@ -109,7 +109,7 @@ void Client::registration(const std::string &login, const std::string &password)
 void Client::set_permission(const std::string &login, permission_t permission) {
     if (permission & ~permissions::WAIT)
         throw Client::error("changing permission on not WAIT permissions is impossible");
-    send(commands::SET_PERMITION, {
+    send(commands::SET_PERMISSION, {
             {parts::LOGIN,     login},
             {parts::PERMITION, permission}
     });

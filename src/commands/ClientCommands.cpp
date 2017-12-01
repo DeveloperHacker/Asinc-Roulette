@@ -156,7 +156,7 @@ void ClientCommands::init(Client &client) {
     add_command(permissions::ALL, commands::DISCONNECT, "", disconnect_description, disconnect);
     add_command(permissions::AUTH, commands::SYNC, "", sync_description, sync);
     add_command(permissions::GUEST, commands::SINGUP, "login password", signup_description, signup);
-    add_command(permissions::ADMIN, commands::SET_PERMITION, "login permission", set_permission_desc, set_permission);
+    add_command(permissions::ADMIN, commands::SET_PERMISSION, "login permission", set_permission_desc, set_permission);
     add_command(permissions::CROUPIER, commands::SPIN, "", spin_description, command_spin);
     add_command(permissions::PLAYER, commands::BET, "type number value", bet_description, command_bet);
     add_command(permissions::PLAY, commands::BETS, "", bets_description, command_bets);

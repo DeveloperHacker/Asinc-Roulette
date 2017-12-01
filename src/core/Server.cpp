@@ -171,7 +171,7 @@ void Server::do_set_permission(id_t id, const std::string &login, permission_t p
         local_set_user_permission(user_id, permission);
         do_sync(user_id);
     }
-    send(id, stats::STATUS_SUCCESS, commands::SET_PERMITION, {});
+    send(id, stats::STATUS_SUCCESS, commands::SET_PERMISSION, {});
 }
 
 std::string Server::get_login(id_t id) {
