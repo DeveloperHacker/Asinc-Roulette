@@ -6,7 +6,9 @@
 #include <unordered_map>
 #include <mutex>
 
-using id_t = int;
+#ifdef _WIN32
+    using id_t = int;
+#endif
 
 struct Connection {
     id_t id;

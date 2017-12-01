@@ -120,7 +120,11 @@ void TCPServer::run() {
             auto &&descriptor = (socket_t) event.data.fd;
             if (event.events & EPOLLERR) {
                 remove_descriptor(epoll_descriptor, event);
-                throw TCPServer::error("epoll error");
+                auto &&connection = connection_by_descriptor(descriptor);
+                connection->close = true;
+                auto &&id = connection->id;
+                auto &&address = connection->address;
+                std::cerr << TCPServer::format(id, address) << " epoll error" << std::endl;
             }
             if (event.events & EPOLLHUP) {
                 remove_descriptor(epoll_descriptor, event);

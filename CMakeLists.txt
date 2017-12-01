@@ -51,7 +51,7 @@ add_executable(init src/core/config.h src/init.cpp ${DATABASE})
 if (WIN32)
     target_link_libraries(client ws2_32 wsock32)
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpthread -g3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpthread -lsqlite3 -g3")
 endif()
 
 target_link_libraries(server /usr/local/lib/libSQLiteCpp.a)

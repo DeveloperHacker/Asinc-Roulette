@@ -9,8 +9,8 @@
     std::cout << __func__ << ":" << __LINE__ << std::endl;
 
 namespace address {
-    const std::string SERVER_HOST("127.0.0.1"); // NOLINT
-    const uint16_t SERVER_PORT = 7777;
+    const std::string SERVER_HOST("192.168.1.63"); // NOLINT
+    const uint16_t SERVER_PORT = 2000;
 }
 
 namespace parts {
