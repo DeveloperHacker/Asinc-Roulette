@@ -329,11 +329,11 @@ void Server::do_bets(id_t id) {
         auto &&login = entry.first;
         for (auto &&bet : entry.second) {
             data.push_back({
-                                   {parts::LOGIN,  login},
-                                   {parts::TYPE,   bet.type},
-                                   {parts::NUMBER, bet.number},
-                                   {parts::VALUE,  bet.value}
-                           });
+                {parts::LOGIN,  login},
+                {parts::TYPE,   bet.type},
+                {parts::NUMBER, bet.number},
+                {parts::VALUE,  bet.value}
+            });
         }
     }
     send(id, stats::STATUS_SUCCESS, commands::BETS, data);

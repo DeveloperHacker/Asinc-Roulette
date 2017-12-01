@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <tuple>
+#include <vector>
 
 #define PRINT_LINE_NUMBER() \
     std::cout << __func__ << ":" << __LINE__ << std::endl;
@@ -60,6 +61,7 @@ namespace commands {
     const std::string BETS("bets"); // NOLINT
     const std::string PAY("pay"); // NOLINT
     const std::string KICK("kick"); // NOLINT
+    const std::string LIST("list"); // NOLINT
 }
 
 namespace other {
@@ -92,6 +94,9 @@ namespace bets {
     const std::string HSPLIT("hsplit"); // NOLINT
     const std::string VSPLIT("vsplit"); // NOLINT
     const std::string STRAIGHT("straight"); // NOLINT
+
+    const std::vector<std::string> bets({RED, BLACK, EVEN, ODD, LOW, HIGH, ZERO, BASKET, //NOLINT
+                                         COLUMN, DOZEN, LINE, STREET, CORNER, HSPLIT, VSPLIT, STRAIGHT});
 
     const std::unordered_map<std::string, std::tuple<int, int>> ranges( //NOLINT
             {{RED,      {1, 1}},

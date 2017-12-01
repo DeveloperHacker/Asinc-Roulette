@@ -124,6 +124,26 @@ void ClientCommands::init(Client &client) {
             throw ClientCommands::error("expected only login");
         client.kick(arguments[0]);
     };
+    impl_t command_list = [this, &client](permission_t permission, const args_t &arguments) {
+        if (!arguments.empty())
+            throw ClientCommands::error("unexpected list arguments");
+        std::cout << " " << std::setw(10) << std::left << "type"
+                  << " " << std::setw(10) << std::left << "range"
+                  << " " << std::setw(10) << std::left << "multiplier"
+                  << std::endl;
+        for (auto &&type : bets::bets) {
+            auto &&range = bets::ranges.at(type);
+            auto &&multiplier = bets::multipliers.at(type);
+            std::stringstream range_stream;
+            range_stream << std::get<0>(range) << ".." << std::get<1>(range);
+            std::stringstream mult_stream;
+            mult_stream << "x" << multiplier;
+            std::cout << " " << std::setw(10) << std::left << type
+                      << " " << std::setw(10) << std::left << range_stream.str()
+                      << " " << std::setw(10) << std::left << mult_stream.str()
+                      << std::endl;
+        }
+    };
 
     std::string help_description("show help");
     std::string signin_description("sign in the system");
@@ -143,6 +163,7 @@ void ClientCommands::init(Client &client) {
     std::string bets_description("get bets of all users");
     std::string balance_description("get balance");
     std::string kick_description("kick player");
+    std::string list_description("show list of bet types");
 
     add_command(permissions::ALL, commands::HELP, "", help_description, help);
     add_command(permissions::GUEST, commands::SIGNIN, "login password", signin_description, signin);
@@ -162,4 +183,5 @@ void ClientCommands::init(Client &client) {
     add_command(permissions::PLAY, commands::BETS, "", bets_description, command_bets);
     add_command(permissions::AUTH, commands::BALANCE, "", balance_description, command_balance);
     add_command(permissions::CROUPIER, commands::KICK, "login", kick_description, command_kick);
+    add_command(permissions::PLAY, commands::LIST, "", list_description, command_list);
 }
