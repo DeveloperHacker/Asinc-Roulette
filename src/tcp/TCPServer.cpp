@@ -35,7 +35,7 @@ void task(std::shared_ptr<Connection> connection, const handle_signature &handle
     try {
         auto &&message = socket.receive();
         close = handle(id, address, message);
-    } catch (std::runtime_error &ex) {
+    } catch (std::exception &ex) {
         std::cerr << TCPServer::format(id, address) << " handle error: " << ex.what() << std::endl;
         close = true;
     } catch (...) {
