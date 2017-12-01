@@ -22,7 +22,6 @@ WinSocket::WinSocket(socket_t socket) : descriptor(socket) {
 }
 
 WinSocket::~WinSocket() {
-    WSACleanup();
     if (address_info != nullptr)
         freeaddrinfo(address_info);
 }
@@ -135,12 +134,10 @@ address_t address(int domain, int type, int protocol, const char *host, const ch
     hints.ai_family = domain;
     hints.ai_socktype = type;
     hints.ai_protocol = protocol;
-
     address_t address_info = nullptr;
-
     auto &&getaddr_status = getaddrinfo(host, port, &hints, &address_info);
     if (getaddr_status != 0) {
-        throw WinSocket::error("Getaddr failed with status " + std::to_string(getaddr_status));
+        throw WinSocket::error("Address creation failed with status " + std::to_string(getaddr_status));
     }
     return address_info;
 }
@@ -161,4 +158,16 @@ address_t WinSocket::address(int domain, int type, int protocol, uint16_t port) 
 std::ostream &operator<<(std::ostream &stream, const WinSocket &socket) {
     auto &&address = socket.get_address();
     return stream << address;
+}
+
+void WinSocket::startup() {
+    WSADATA wsaData;
+    auto &&startup_status = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (startup_status != 0) {
+        throw WinSocket::error("WSAStartup failed with error: " + std::to_string(startup_status));
+    }
+}
+
+void WinSocket::cleanup() {
+    WSACleanup();
 }

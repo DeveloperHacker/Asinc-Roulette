@@ -31,8 +31,7 @@ void Transfer::set_public_key(const std::string &key) {
 std::string Transfer::encrypt(const std::string &message) {
     auto &&c_message = reinterpret_cast<const unsigned char *>(message.c_str());
     auto &&c_length = static_cast<unsigned int>(message.length());
-    auto b64 = base64_encode(c_message, c_length);
-    return message;
+    return base64_encode(c_message, c_length);
 }
 
 std::string Transfer::decrypt(const std::string &message) {

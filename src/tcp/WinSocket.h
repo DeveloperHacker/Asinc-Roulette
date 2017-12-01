@@ -66,6 +66,10 @@ public:
 
     int safe_shutdown();
 
+    static void startup();
+
+    static void cleanup();
+
     static address_t address(int domain, int type, int protocol, const std::string &host, uint16_t port);
 
     static address_t address(int domain, int type, int protocol, const char *host, uint16_t port);
