@@ -63,10 +63,10 @@ ServerHandlers::ServerHandlers() : Handlers() {
         server.do_signup(id, login, password);
         return false;
     };
-    impl_t set_permition = [](Server &server, id_t id, address_t address, json &request) -> bool {
+    impl_t set_permission = [](Server &server, id_t id, address_t address, json &request) -> bool {
         auto &&login = request[parts::LOGIN];
-        auto &&permition = request[parts::PERMITION];
-        server.do_set_permition(id, login, permition);
+        auto &&permission = request[parts::PERMITION];
+        server.do_set_permission(id, login, permission);
         return false;
     };
     impl_t command_spin = [](Server &server, id_t id, address_t address, json &request) -> bool {
@@ -95,21 +95,21 @@ ServerHandlers::ServerHandlers() : Handlers() {
         return false;
     };
 
-    add_handler(permitions::GUEST, commands::SIGNIN, handler_signin);
-    add_handler(permitions::WAIT, commands::SINGOUT, handler_signout);
-    add_handler(permitions::WAIT, commands::JOIN, join);
-    add_handler(permitions::STAFF, commands::CREATE, create);
-    add_handler(permitions::PLAY, commands::LEAVE, leave);
-    add_handler(permitions::WAIT, commands::TABLES, tables);
-    add_handler(permitions::PLAY, commands::USERS, users);
-    add_handler(permitions::PLAY, commands::WRITE, write);
-    add_handler(permitions::ALL, commands::DISCONNECT, disconnect);
-    add_handler(permitions::AUTH, commands::SYNC, sync);
-    add_handler(permitions::GUEST, commands::SINGUP, handler_signup);
-    add_handler(permitions::ADMIN, commands::SET_PERMITION, set_permition);
-    add_handler(permitions::CROUPIER, commands::SPIN, command_spin);
-    add_handler(permitions::PLAYER, commands::BET, command_bet);
-    add_handler(permitions::PLAY, commands::BETS, command_bets);
-    add_handler(permitions::AUTH, commands::BALANCE, command_balance);
-    add_handler(permitions::CROUPIER, commands::KICK, command_kick);
+    add_handler(permissions::GUEST, commands::SIGNIN, handler_signin);
+    add_handler(permissions::WAIT, commands::SINGOUT, handler_signout);
+    add_handler(permissions::WAIT, commands::JOIN, join);
+    add_handler(permissions::STAFF, commands::CREATE, create);
+    add_handler(permissions::PLAY, commands::LEAVE, leave);
+    add_handler(permissions::WAIT, commands::TABLES, tables);
+    add_handler(permissions::PLAY, commands::USERS, users);
+    add_handler(permissions::PLAY, commands::WRITE, write);
+    add_handler(permissions::ALL, commands::DISCONNECT, disconnect);
+    add_handler(permissions::AUTH, commands::SYNC, sync);
+    add_handler(permissions::GUEST, commands::SINGUP, handler_signup);
+    add_handler(permissions::ADMIN, commands::SET_PERMITION, set_permission);
+    add_handler(permissions::CROUPIER, commands::SPIN, command_spin);
+    add_handler(permissions::PLAYER, commands::BET, command_bet);
+    add_handler(permissions::PLAY, commands::BETS, command_bets);
+    add_handler(permissions::AUTH, commands::BALANCE, command_balance);
+    add_handler(permissions::CROUPIER, commands::KICK, command_kick);
 }

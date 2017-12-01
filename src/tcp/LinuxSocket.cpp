@@ -23,12 +23,13 @@ void LinuxSocket::connect(const address_t &address) {
     if (success < 0) throw LinuxSocket::error("connect: connection hast'n exist");
 }
 
-int raw_receive(socket_t socket, char *message, size_t length, int flags) {
+int raw_receive(socket_t socket, char *message, int flags) {
     int received = 0;
-    while (received < length) {
-        char buffer[length];
-        auto size = ::recv(socket, buffer, length, flags);
-        if (size <= 0) throw LinuxSocket::error("receive: connection refused");
+    while (received < LinuxSocket::BUFFER_SIZE) {
+        char buffer[LinuxSocket::BUFFER_SIZE];
+        auto size = ::recv(socket, buffer, LinuxSocket::BUFFER_SIZE, flags);
+        if (size <= 0)
+            throw LinuxSocket::error("receive: connection refused");
         for (int i = 0; i < size; i++)
             message[i + received] = buffer[i];
         received += size;
@@ -42,7 +43,7 @@ std::string LinuxSocket::receive() {
     auto index = std::string::npos;
     while (index == std::string::npos) {
         char buf[BUFFER_SIZE];
-        int length = raw_receive(descriptor, buf, BUFFER_SIZE, 0);
+        int length = raw_receive(descriptor, buf, 0);
         std::string data(buf, static_cast<unsigned long>(length));
         buffer.append(data);
         index = data.find("\r\n");
@@ -63,7 +64,8 @@ void LinuxSocket::send(std::string message) {
         auto right = left + BUFFER_SIZE;
         auto sub_data = message.substr(left, right);
         auto length = ::send(descriptor, sub_data.c_str(), BUFFER_SIZE, 0);
-        if (length <= 0) throw LinuxSocket::error("send: connection refused");
+        if (length <= 0)
+            throw LinuxSocket::error("send: connection refused");
     }
 }
 
@@ -73,13 +75,15 @@ int LinuxSocket::safe_close() {
 
 void LinuxSocket::close() {
     auto success = safe_close();
-    if (success < 0) throw LinuxSocket::error("close: error");
+    if (success < 0)
+        throw LinuxSocket::error("close: error");
 }
 
 
 socket_t LinuxSocket::accept() {
     auto socket = ::accept(descriptor, nullptr, nullptr);
-    if (socket < 0) throw LinuxSocket::error("accept: error");
+    if (socket < 0)
+        throw LinuxSocket::error("accept: error");
     return socket;
 }
 

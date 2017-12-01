@@ -7,28 +7,28 @@ using handler_t = std::function<void(Client &, json &)>;
 
 ClientHandlers::ClientHandlers() : Handlers() {
     handler_t signin = [](Client &client, json &response) {
-        permition_t permition = response[parts::PERMITION];
-        client.permition = permition;
+        permission_t permission = response[parts::PERMITION];
+        client.permission = permission;
         std::cout << "signin success" << std::endl;
     };
     handler_t signout = [](Client &client, json &response) {
-        permition_t permition = response[parts::PERMITION];
-        client.permition = permition;
+        permission_t permission = response[parts::PERMITION];
+        client.permission = permission;
         std::cout << "signout success" << std::endl;
     };
     handler_t join = [](Client &client, json &response) {
-        permition_t permition = response[parts::PERMITION];
-        client.permition = permition;
+        permission_t permission = response[parts::PERMITION];
+        client.permission = permission;
         std::cout << "join success" << std::endl;
     };
     handler_t create = [](Client &client, json &response) {
-        permition_t permition = response[parts::PERMITION];
-        client.permition = permition;
+        permission_t permission = response[parts::PERMITION];
+        client.permission = permission;
         std::cout << "create success" << std::endl;
     };
     handler_t leave = [](Client &client, json &response) {
-        permition_t permition = response[parts::PERMITION];
-        client.permition = permition;
+        permission_t permission = response[parts::PERMITION];
+        client.permission = permission;
         std::cout << "leave success" << std::endl;
     };
     handler_t tables = [](Client &client, json &response) {
@@ -66,15 +66,15 @@ ClientHandlers::ClientHandlers() : Handlers() {
                   << " " << std::setw(10) << std::left << message << std::endl;
     };
     handler_t sync = [](Client &client, json &response) {
-        permition_t permition = response[parts::PERMITION];
-        client.permition = permition;
+        permission_t permission = response[parts::PERMITION];
+        client.permission = permission;
         std::cout << "sync success" << std::endl;
     };
     handler_t signup = [](Client &client, json &response) {
         std::cout << "registration success" << std::endl;
     };
-    handler_t set_permition = [](Client &client, json &response) {
-        std::cout << "permition set success" << std::endl;
+    handler_t set_permission = [](Client &client, json &response) {
+        std::cout << "permission set success" << std::endl;
     };
     handler_t command_spin = [](Client &client, json &response) {
         int random_number = response[parts::RANDOM_NUMBER];
@@ -115,21 +115,21 @@ ClientHandlers::ClientHandlers() : Handlers() {
         std::cout << "user kicked" << std::endl;
     };
 
-    add_handler(permitions::ALL, commands::SIGNIN, signin);
-    add_handler(permitions::ALL, commands::SINGOUT, signout);
-    add_handler(permitions::ALL, commands::JOIN, join);
-    add_handler(permitions::ALL, commands::CREATE, create);
-    add_handler(permitions::ALL, commands::LEAVE, leave);
-    add_handler(permitions::ALL, commands::TABLES, tables);
-    add_handler(permitions::ALL, commands::USERS, users);
-    add_handler(permitions::ALL, commands::WRITE, write);
-    add_handler(permitions::ALL, commands::SYNC, sync);
-    add_handler(permitions::ALL, commands::SINGUP, signup);
-    add_handler(permitions::ALL, commands::SET_PERMITION, set_permition);
-    add_handler(permitions::ALL, commands::SPIN, command_spin);
-    add_handler(permitions::ALL, commands::BET, command_bet);
-    add_handler(permitions::ALL, commands::BETS, command_bets);
-    add_handler(permitions::ALL, commands::BALANCE, command_balance);
-    add_handler(permitions::ALL, commands::PAY, command_pay);
-    add_handler(permitions::ALL, commands::KICK, command_kick);
+    add_handler(permissions::ALL, commands::SIGNIN, signin);
+    add_handler(permissions::ALL, commands::SINGOUT, signout);
+    add_handler(permissions::ALL, commands::JOIN, join);
+    add_handler(permissions::ALL, commands::CREATE, create);
+    add_handler(permissions::ALL, commands::LEAVE, leave);
+    add_handler(permissions::ALL, commands::TABLES, tables);
+    add_handler(permissions::ALL, commands::USERS, users);
+    add_handler(permissions::ALL, commands::WRITE, write);
+    add_handler(permissions::ALL, commands::SYNC, sync);
+    add_handler(permissions::ALL, commands::SINGUP, signup);
+    add_handler(permissions::ALL, commands::SET_PERMITION, set_permission);
+    add_handler(permissions::ALL, commands::SPIN, command_spin);
+    add_handler(permissions::ALL, commands::BET, command_bet);
+    add_handler(permissions::ALL, commands::BETS, command_bets);
+    add_handler(permissions::ALL, commands::BALANCE, command_balance);
+    add_handler(permissions::ALL, commands::PAY, command_pay);
+    add_handler(permissions::ALL, commands::KICK, command_kick);
 }

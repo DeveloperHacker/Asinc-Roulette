@@ -4,7 +4,7 @@
 using json = nlohmann::json;
 
 Client::Client(int domain, int type, int protocol, address_t &address
-) : CryptoClient(domain, type, protocol, address), permition(permitions::GUEST),
+) : CryptoClient(domain, type, protocol, address), permission(permissions::GUEST),
     handlers(std::make_shared<ClientHandlers>()),
     commands(std::make_shared<ClientCommands>()) {
     commands->init(*this);
@@ -16,11 +16,11 @@ void Client::crypto_input(const std::string &message) {
         std::string status = response[parts::STATUS];
         std::string command = response[parts::COMMAND];
         auto &&data = response[parts::DATA];
-        if (status == stats::ERROR) {
+        if (status == stats::STATUS_ERROR) {
             std::string report = data[parts::MESSAGE];
             throw Client::error("error " + command + ": " + report);
         }
-        handlers->execute(permition, command, *this, data);
+        handlers->execute(permission, command, *this, data);
     } catch (ClientHandlers::error &ex) {
         std::cerr << ex.what() << std::endl;
     } catch (Client::error &ex) {
@@ -32,7 +32,7 @@ void Client::crypto_output() {
     try {
         std::string command;
         std::getline(std::cin, command);
-        commands->parse_and_execute(permition, command);
+        commands->parse_and_execute(permission, command);
     } catch (ClientCommands::error &ex) {
         std::cerr << ex.what() << std::endl;
     } catch (Client::error &ex) {
@@ -106,12 +106,12 @@ void Client::registration(const std::string &login, const std::string &password)
     });
 }
 
-void Client::set_permition(const std::string &login, permition_t permition) {
-    if (permition & ~permitions::WAIT)
-        throw Client::error("changing permition on not WAIT permitions is impossible");
+void Client::set_permission(const std::string &login, permission_t permission) {
+    if (permission & ~permissions::WAIT)
+        throw Client::error("changing permission on not WAIT permissions is impossible");
     send(commands::SET_PERMITION, {
             {parts::LOGIN,     login},
-            {parts::PERMITION, permition}
+            {parts::PERMITION, permission}
     });
 }
 

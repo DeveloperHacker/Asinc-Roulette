@@ -1,16 +1,17 @@
 #pragma once
 
 #include "../commands/Commands.h"
+#include "../../src/tcp/TCPServer.h"
 
 class SimpleServerCommands : public Commands {
 public:
     explicit SimpleServerCommands(TCPServer &server) : Commands() {
-        impl_t help = [this](permition_t permition, const args_t &arguments) -> bool {
+        impl_t help = [this](permission_t permission, const args_t &arguments) -> bool {
             if (!arguments.empty()) {
                 std::cerr << "unexpected help arguments" << std::endl;
                 return false;
             }
-            for (auto &&entry: get_commands_info(permition)) {
+            for (auto &&entry: get_commands_info(permission)) {
                 auto &&name = entry.first;
                 auto &&argument_description = std::get<0>(entry.second);
                 auto &&description = std::get<1>(entry.second);
@@ -20,7 +21,7 @@ public:
             }
             return true;
         };
-        impl_t shutdown = [&server](permition_t permition, const args_t &arguments) -> bool {
+        impl_t shutdown = [&server](permission_t permission, const args_t &arguments) -> bool {
             if (!arguments.empty()) {
                 std::cerr << "unexpected shutdown arguments" << std::endl;
                 return false;
@@ -28,7 +29,7 @@ public:
             server.stop();
             return true;
         };
-        impl_t kill = [&server](permition_t permition, const args_t &arguments) -> bool {
+        impl_t kill = [&server](permission_t permission, const args_t &arguments) -> bool {
             if (arguments.empty()) {
                 std::cerr << "expected kill argument" << std::endl;
                 return false;
@@ -49,7 +50,7 @@ public:
             }
             return true;
         };
-        impl_t list = [&server](permition_t permition, const args_t &arguments) -> bool {
+        impl_t list = [&server](permission_t permission, const args_t &arguments) -> bool {
             if (!arguments.empty()) {
                 std::cerr << "unexpected list arguments" << std::endl;
                 return false;
@@ -75,7 +76,7 @@ public:
             }
             return true;
         };
-        impl_t send = [&server](permition_t permition, const args_t &arguments) -> bool {
+        impl_t send = [&server](permission_t permission, const args_t &arguments) -> bool {
             if (arguments.empty()) {
                 std::cerr << "expected kill argument" << std::endl;
                 return false;
@@ -111,10 +112,10 @@ public:
         std::string list_description("show list of connected clients");
         std::string send_description("send message to client with specified ids");
 
-        add_command(permitions::ADMIN, help_name, "", help_description, help);
-        add_command(permitions::ADMIN, shutdown_name, "", shutdown_description, shutdown);
-        add_command(permitions::ADMIN, kill_name, "[id...] [-a] [--all]", kill_description, kill);
-        add_command(permitions::ADMIN, list_name, "", list_description, list);
-        add_command(permitions::ADMIN, send_name, "[id... ] message", send_description, send);
+        add_command(permissions::ADMIN, help_name, "", help_description, help);
+        add_command(permissions::ADMIN, shutdown_name, "", shutdown_description, shutdown);
+        add_command(permissions::ADMIN, kill_name, "[id...] [-a] [--all]", kill_description, kill);
+        add_command(permissions::ADMIN, list_name, "", list_description, list);
+        add_command(permissions::ADMIN, send_name, "[id... ] message", send_description, send);
     }
 };

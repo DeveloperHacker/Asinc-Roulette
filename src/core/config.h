@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <stdint-gcc.h>
 #include <unordered_set>
 #include <unordered_map>
 #include <tuple>
@@ -23,7 +22,7 @@ namespace parts {
     const std::string PASSWORD("password"); // NOLINT
     const std::string NAME("name"); // NOLINT
     const std::string ROLE("role"); // NOLINT
-    const std::string PERMITION("permition"); // NOLINT
+    const std::string PERMITION("permission"); // NOLINT
     const std::string LIST("list"); // NOLINT
     const std::string NUM_PLAYERS("num_players"); // NOLINT
     const std::string MAX_PLAYERS("max_players"); // NOLINT
@@ -37,8 +36,8 @@ namespace parts {
 }
 
 namespace stats {
-    const std::string RESOLVED("success"); // NOLINT
-    const std::string ERROR("error"); // NOLINT
+    const std::string STATUS_SUCCESS("success"); // NOLINT
+    const std::string STATUS_ERROR("error"); // NOLINT
 }
 
 namespace commands {
@@ -54,7 +53,7 @@ namespace commands {
     const std::string WRITE("write"); // NOLINT
     const std::string DISCONNECT("disconnect"); // NOLINT
     const std::string SYNC("sync"); // NOLINT
-    const std::string SET_PERMITION("set_permition"); // NOLINT
+    const std::string SET_PERMITION("set_permission"); // NOLINT
     const std::string BALANCE("balance"); // NOLINT
     const std::string BET("bet"); // NOLINT
     const std::string SPIN("spin"); // NOLINT

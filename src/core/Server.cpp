@@ -12,7 +12,7 @@ Server::Server(int domain, int type, int protocol, address_t &address
 
 void Server::handle_error(id_t id, const std::string &command, const std::string &message) {
     std::cerr << "[DEBUG] ERROR " << message << std::endl;
-    send(id, stats::ERROR, command, {
+    send(id, stats::STATUS_ERROR, command, {
             {parts::MESSAGE, message}
     });
 }
@@ -22,8 +22,8 @@ bool Server::crypto_handle(id_t id, address_t address, const std::string &messag
     std::string command = request[parts::COMMAND];
     auto &&data = request[parts::DATA];
     try {
-        auto &&permition = get_permition(id);
-        return handlers->execute(permition, command, *this, id, address, data);
+        auto &&permission = get_permission(id);
+        return handlers->execute(permission, command, *this, id, address, data);
     } catch (ServerHandlers::error &ex) {
         handle_error(id, command, ex.what());
         return false;
@@ -54,38 +54,38 @@ void Server::do_signin(id_t id, const std::string &login, const std::string &pas
     if (user.password != password)
         throw Server::error("invalid login or password");
     add_user(id, user);
-    send(id, stats::RESOLVED, commands::SIGNIN, {
-            {parts::PERMITION, user.permition}
+    send(id, stats::STATUS_SUCCESS, commands::SIGNIN, {
+            {parts::PERMITION, user.permission}
     });
 }
 
 void Server::do_signout(id_t id) {
     auto &&user = data_base.get_user(other::GUEST);
     add_user(id, user);
-    send(id, stats::RESOLVED, commands::SINGOUT, {
-            {parts::PERMITION, permitions::GUEST}
+    send(id, stats::STATUS_SUCCESS, commands::SINGOUT, {
+            {parts::PERMITION, permissions::GUEST}
     });
 }
 
 void Server::do_join(id_t id, const std::string &name, const std::string &password) {
     add_player(id, name, password);
-    send(id, stats::RESOLVED, commands::JOIN, {
-            {parts::PERMITION, permitions::PLAYER}
+    send(id, stats::STATUS_SUCCESS, commands::JOIN, {
+            {parts::PERMITION, permissions::PLAYER}
     });
 }
 
 void Server::do_create(id_t id, const std::string &name, const std::string &password) {
     add_croupier(id, name, password);
-    send(id, stats::RESOLVED, commands::CREATE, {
-            {parts::PERMITION, permitions::CROUPIER}
+    send(id, stats::STATUS_SUCCESS, commands::CREATE, {
+            {parts::PERMITION, permissions::CROUPIER}
     });
 }
 
 void Server::do_leave(id_t id) {
-    auto &&permition = get_permition(id);
-    if (permition & permitions::CROUPIER)
+    auto &&permission = get_permission(id);
+    if (permission & permissions::CROUPIER)
         leave_croupier(id);
-    if (permition & permitions::PLAYER)
+    if (permission & permissions::PLAYER)
         leave_player(id);
 }
 
@@ -102,7 +102,7 @@ void Server::do_write(id_t id, const std::string &login, const std::string &mess
     auto &&session = get_session(id);
     if (session.users.count(login) == 0)
         throw Server::error("user with login " + login + " hasn't found");
-    send(get_id(login), stats::RESOLVED, commands::WRITE, {
+    send(get_id(login), stats::STATUS_SUCCESS, commands::WRITE, {
             {parts::LOGIN,   get_login(id)},
             {parts::MESSAGE, message}
     });
@@ -119,7 +119,7 @@ void Server::do_tables(id_t id) {
         table[parts::LOCK] = !session.password.empty();
         list.push_back(table);
     }
-    send(id, stats::RESOLVED, commands::TABLES, {
+    send(id, stats::STATUS_SUCCESS, commands::TABLES, {
             {parts::LIST, list}
     });
 }
@@ -129,49 +129,49 @@ void Server::do_users(id_t id) {
     json list = {};
     for (auto &&login : session.users) {
         auto &&user_id = get_id(login);
-        auto &&permition = get_permition(user_id);
-        auto &&role = permition & permitions::CROUPIER ? other::CROUPIER : other::PLAYER;
+        auto &&permission = get_permission(user_id);
+        auto &&role = permission & permissions::CROUPIER ? other::CROUPIER : other::PLAYER;
         json user;
         user[parts::LOGIN] = login;
         user[parts::ROLE] = role;
         list.push_back(user);
     }
-    send(id, stats::RESOLVED, commands::USERS, {
+    send(id, stats::STATUS_SUCCESS, commands::USERS, {
             {parts::LIST, list}
     });
 }
 
 void Server::do_disconnect(id_t id) {
     auto &&login = get_login(id);
-    auto &&permition = get_permition(id);
-    if (permition & permitions::CROUPIER)
+    auto &&permission = get_permission(id);
+    if (permission & permissions::CROUPIER)
         leave_croupier(id);
-    if (permition & permitions::PLAYER)
+    if (permission & permissions::PLAYER)
         leave_player(id);
     remove_user(id);
 }
 
 void Server::do_sync(id_t id) {
-    auto &&permition = get_permition(id);
-    send(id, stats::RESOLVED, commands::SYNC, {
-            {parts::PERMITION, permition}
+    auto &&permission = get_permission(id);
+    send(id, stats::STATUS_SUCCESS, commands::SYNC, {
+            {parts::PERMITION, permission}
     });
 }
 
 void Server::do_signup(id_t id, const std::string &login, const std::string &password) {
-    data_base.new_user(login, password, permitions::USER);
-    send(id, stats::RESOLVED, commands::SINGUP, {});
+    data_base.new_user(login, password, permissions::USER);
+    send(id, stats::STATUS_SUCCESS, commands::SINGUP, {});
 }
 
-void Server::do_set_permition(id_t id, const std::string &login, permition_t permition) {
-    data_base.set_user_permition(login, permition);
+void Server::do_set_permission(id_t id, const std::string &login, permission_t permission) {
+    data_base.set_user_permission(login, permission);
     auto &&user_online = login2id.count(login) > 0;
     if (user_online) {
         auto &&user_id = get_id(login);
-        local_set_user_permition(user_id, permition);
+        local_set_user_permission(user_id, permission);
         do_sync(user_id);
     }
-    send(id, stats::RESOLVED, commands::SET_PERMITION, {});
+    send(id, stats::STATUS_SUCCESS, commands::SET_PERMITION, {});
 }
 
 std::string Server::get_login(id_t id) {
@@ -179,9 +179,9 @@ std::string Server::get_login(id_t id) {
     return user.login;
 }
 
-permition_t Server::get_permition(id_t id) {
+permission_t Server::get_permission(id_t id) {
     auto &&user = get_user(id);
-    return user.permition;
+    return user.permission;
 }
 
 void Server::leave_croupier(id_t id) {
@@ -192,10 +192,10 @@ void Server::leave_croupier(id_t id) {
     }
     sessions.erase(session.name);
     auto &&login = get_login(id);
-    auto &&permition = data_base.get_user_permition(login);
-    local_set_user_permition(id, permition);
-    send(id, stats::RESOLVED, commands::LEAVE, {
-            {parts::PERMITION, permition}
+    auto &&permission = data_base.get_user_permission(login);
+    local_set_user_permission(id, permission);
+    send(id, stats::STATUS_SUCCESS, commands::LEAVE, {
+            {parts::PERMITION, permission}
     });
 }
 
@@ -206,10 +206,10 @@ void Server::leave_player(id_t id) {
         throw Server::error("croupier is not player");
     session.users.erase(login);
     session.bets.erase(login);
-    auto &&permition = data_base.get_user_permition(login);
-    local_set_user_permition(id, permition);
-    send(id, stats::RESOLVED, commands::LEAVE, {
-            {parts::PERMITION, permition}
+    auto &&permission = data_base.get_user_permission(login);
+    local_set_user_permission(id, permission);
+    send(id, stats::STATUS_SUCCESS, commands::LEAVE, {
+            {parts::PERMITION, permission}
     });
 }
 
@@ -240,7 +240,7 @@ void Server::add_player(id_t id, const std::string &name, const std::string &pas
     auto &&login = get_login(id);
     id2name[id] = name;
     session.users.emplace(login);
-    local_set_user_permition(id, permitions::PLAYER);
+    local_set_user_permission(id, permissions::PLAYER);
 }
 
 void Server::add_croupier(id_t id, const std::string &name, const std::string &password) {
@@ -252,7 +252,7 @@ void Server::add_croupier(id_t id, const std::string &name, const std::string &p
     session.users.emplace(login);
     sessions[name] = session;
     id2name[id] = name;
-    local_set_user_permition(id, permitions::CROUPIER);
+    local_set_user_permission(id, permissions::CROUPIER);
 }
 
 void Server::add_user(id_t id, const DataBase::user_t &user) {
@@ -274,9 +274,9 @@ DataBase::user_t &Server::get_user(id_t id) {
     return entry->second;
 }
 
-void Server::local_set_user_permition(id_t id, permition_t permition) {
+void Server::local_set_user_permission(id_t id, permission_t permission) {
     auto &&user = get_user(id);
-    user.permition = permition;
+    user.permission = permission;
     add_user(id, user);
 }
 
@@ -298,7 +298,7 @@ void Server::send(id_t id, const std::string &status, const std::string &command
 
 void Server::do_balance(id_t id) {
     auto &&user = get_user(id);
-    send(id, stats::RESOLVED, commands::BALANCE, {
+    send(id, stats::STATUS_SUCCESS, commands::BALANCE, {
             {parts::BALANCE, user.balance}
     });
 }
@@ -319,7 +319,7 @@ void Server::do_bet(id_t id, const bet_t &bet) {
         throw Server::error("not enough money");
     bets.push_back(bet);
     session.bets[login] = bets;
-    send(id, stats::RESOLVED, commands::BET, {});
+    send(id, stats::STATUS_SUCCESS, commands::BET, {});
 }
 
 void Server::do_bets(id_t id) {
@@ -336,7 +336,7 @@ void Server::do_bets(id_t id) {
                            });
         }
     }
-    send(id, stats::RESOLVED, commands::BETS, data);
+    send(id, stats::STATUS_SUCCESS, commands::BETS, data);
 }
 
 void Server::do_spin(id_t id) {
@@ -344,7 +344,7 @@ void Server::do_spin(id_t id) {
     auto &&random_number = std::rand() % bets::MAX_NUMBER;
     for (auto &&login: session.users) {
         auto &&user_id = get_id(login);
-        send(user_id, stats::RESOLVED, commands::SPIN, {
+        send(user_id, stats::STATUS_SUCCESS, commands::SPIN, {
                 {parts::RANDOM_NUMBER, random_number}
         });
     }
@@ -363,7 +363,7 @@ void Server::do_spin(id_t id) {
 void Server::do_kick(id_t id, const std::string &login) {
     auto &&user_id = get_id(login);
     leave_player(user_id);
-    send(id, stats::RESOLVED, commands::KICK, {});
+    send(id, stats::STATUS_SUCCESS, commands::KICK, {});
 }
 
 void Server::pay(id_t id, const bet_t &bet, bool is_positive) {
@@ -377,7 +377,7 @@ void Server::pay(id_t id, const bet_t &bet, bool is_positive) {
     auto &&user = get_user(id);
     user.balance += value;
     data_base.set_user_balance(user.login, user.balance);
-    send(id, stats::RESOLVED, commands::PAY, {
+    send(id, stats::STATUS_SUCCESS, commands::PAY, {
             {parts::TYPE,   bet.type},
             {parts::NUMBER, bet.number},
             {parts::VALUE,  value}

@@ -3,7 +3,7 @@
 #include <unordered_set>
 #include "../crypto/CryptoServer.h"
 #include "../handlers/ServerHandlers.h"
-#include "../commands/permitions.h"
+#include "../commands/permissions.h"
 #include "../core/DataBase.h"
 #include "../../lib/json/src/json.hpp"
 
@@ -68,7 +68,7 @@ public:
 
     void do_sync(id_t id);
 
-    void do_set_permition(id_t id, const std::string &login, permition_t permition);
+    void do_set_permission(id_t id, const std::string &login, permission_t permission);
 
     void do_balance(id_t id);
 
@@ -87,7 +87,7 @@ public:
 private:
     void pay(id_t id, const bet_t &bet, bool is_positive);
 
-    void local_set_user_permition(id_t id, permition_t permition);
+    void local_set_user_permission(id_t id, permission_t permission);
 
     void leave_croupier(id_t id);
 
@@ -99,7 +99,7 @@ private:
 
     std::string get_login(id_t id);
 
-    permition_t get_permition(id_t id);
+    permission_t get_permission(id_t id);
 
     id_t get_id(const std::string &login);
 

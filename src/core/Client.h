@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../crypto/CryptoClient.h"
-#include "../commands/permitions.h"
+#include "../commands/permissions.h"
 #include "../handlers/ClientHandlers.h"
 #include "../commands/ClientCommands.h"
 
@@ -11,7 +11,7 @@ class ClientCommands;
 
 class Client : public CryptoClient {
 public:
-    permition_t permition;
+    permission_t permission;
 
 private:
     std::shared_ptr<ClientHandlers> handlers;
@@ -49,7 +49,7 @@ public:
 
     void registration(const std::string &login, const std::string &password);
 
-    void set_permition(const std::string &login, permition_t permition);
+    void set_permission(const std::string &login, permission_t permission);
 
     void spin();
 

@@ -1,15 +1,15 @@
 #pragma once
 
 #include <unordered_map>
+#include <functional>
 #include "Command.h"
-#include "permitions.h"
-#include "../../src/tcp/TCPServer.h"
+#include "permissions.h"
 
 using args_t = std::vector<std::string>;
-using impl_t = std::function<void(permition_t, const args_t &)>;
+using impl_t = std::function<void(permission_t, const args_t &)>;
 
 struct command_t {
-    permition_t permition;
+    permission_t permission;
     std::string name;
     std::string argument_description;
     std::string description;
@@ -30,12 +30,12 @@ private:
 public:
     Commands() = default;
 
-    void add_command(permition_t permition, const std::string &name, const std::string &argument_description,
+    void add_command(permission_t permission, const std::string &name, const std::string &argument_description,
                      const std::string &description, impl_t &impl);
 
-    void parse_and_execute(permition_t permition, const std::string &raw_command);
+    void parse_and_execute(permission_t permission, const std::string &raw_command);
 
-    void execute(permition_t permition, const Command &command);
+    void execute(permission_t permission, const Command &command);
 
-    std::unordered_map<std::string, std::tuple<std::string, std::string>> get_commands_info(permition_t permition);
+    std::unordered_map<std::string, std::tuple<std::string, std::string>> get_commands_info(permission_t permission);
 };

@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <mutex>
 
+using id_t = int;
+
 struct Connection {
     id_t id;
 
