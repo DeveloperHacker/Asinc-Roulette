@@ -7,9 +7,7 @@
 std::string random_string() {
     std::string string;
     auto &&length = std::rand() % 100;
-    static const char alphanum[] = "0123456789"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz";
+    static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     for (int i = 0; i < length; ++i) {
         auto &&ch = alphanum[std::rand() % (sizeof(alphanum) - 1)];
         string.push_back(ch);

@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <tuple>
+#include <vector>
 
 #define PRINT_LINE_NUMBER() \
     std::cout << __func__ << ":" << __LINE__ << std::endl;
@@ -23,7 +24,7 @@ namespace parts {
     const std::string PASSWORD("password"); // NOLINT
     const std::string NAME("name"); // NOLINT
     const std::string ROLE("role"); // NOLINT
-    const std::string PERMITION("permition"); // NOLINT
+    const std::string PERMITION("permission"); // NOLINT
     const std::string LIST("list"); // NOLINT
     const std::string NUM_PLAYERS("num_players"); // NOLINT
     const std::string MAX_PLAYERS("max_players"); // NOLINT
@@ -37,8 +38,8 @@ namespace parts {
 }
 
 namespace stats {
-    const std::string RESOLVED("success"); // NOLINT
-    const std::string ERROR("error"); // NOLINT
+    const std::string STATUS_SUCCESS("success"); // NOLINT
+    const std::string STATUS_ERROR("error"); // NOLINT
 }
 
 namespace commands {
@@ -54,13 +55,14 @@ namespace commands {
     const std::string WRITE("write"); // NOLINT
     const std::string DISCONNECT("disconnect"); // NOLINT
     const std::string SYNC("sync"); // NOLINT
-    const std::string SET_PERMITION("set_permition"); // NOLINT
+    const std::string SET_PERMISSION("set"); // NOLINT
     const std::string BALANCE("balance"); // NOLINT
     const std::string BET("bet"); // NOLINT
     const std::string SPIN("spin"); // NOLINT
     const std::string BETS("bets"); // NOLINT
     const std::string PAY("pay"); // NOLINT
     const std::string KICK("kick"); // NOLINT
+    const std::string LIST("list"); // NOLINT
 }
 
 namespace other {
@@ -93,6 +95,9 @@ namespace bets {
     const std::string HSPLIT("hsplit"); // NOLINT
     const std::string VSPLIT("vsplit"); // NOLINT
     const std::string STRAIGHT("straight"); // NOLINT
+
+    const std::vector<std::string> bets({RED, BLACK, EVEN, ODD, LOW, HIGH, ZERO, BASKET, //NOLINT
+                                         COLUMN, DOZEN, LINE, STREET, CORNER, HSPLIT, VSPLIT, STRAIGHT});
 
     const std::unordered_map<std::string, std::tuple<int, int>> ranges( //NOLINT
             {{RED,      {1, 1}},

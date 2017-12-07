@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../commands/permitions.h"
+#include "../commands/permissions.h"
 #include <string>
 #include <memory>
 #include <SQLiteCpp/SQLiteCpp.h>
@@ -19,7 +19,7 @@ public:
     struct user_t {
         std::string login;
         std::string password;
-        permition_t permition;
+        permission_t permission;
         money_t balance;
     };
 
@@ -31,13 +31,13 @@ public:
 
     user_t get_user(const std::string &login);
 
-    void new_user(const std::string &login, const std::string &password, permition_t permition);
+    void new_user(const std::string &login, const std::string &password, permission_t permission);
 
-    permition_t get_user_permition(const std::string &login);
+    permission_t get_user_permission(const std::string &login);
 
     money_t get_user_pouch(const std::string &login);
 
-    void set_user_permition(const std::string &login, permition_t permition);
+    void set_user_permission(const std::string &login, permission_t permission);
 
     void set_user_balance(const std::string &login, money_t pouch);
 

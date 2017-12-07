@@ -35,7 +35,7 @@ void task(std::shared_ptr<Connection> connection, const handle_signature &handle
     try {
         auto &&message = socket.receive();
         close = handle(id, address, message);
-    } catch (std::runtime_error &ex) {
+    } catch (std::exception &ex) {
         std::cerr << TCPServer::format(id, address) << " handle error: " << ex.what() << std::endl;
         close = true;
     } catch (...) {
@@ -120,7 +120,11 @@ void TCPServer::run() {
             auto &&descriptor = (socket_t) event.data.fd;
             if (event.events & EPOLLERR) {
                 remove_descriptor(epoll_descriptor, event);
-                throw TCPServer::error("epoll error");
+                auto &&connection = connection_by_descriptor(descriptor);
+                connection->close = true;
+                auto &&id = connection->id;
+                auto &&address = connection->address;
+                std::cerr << TCPServer::format(id, address) << " epoll error" << std::endl;
             }
             if (event.events & EPOLLHUP) {
                 remove_descriptor(epoll_descriptor, event);

@@ -14,7 +14,7 @@ int main() {
         try {
             std::string command;
             std::getline(std::cin, command);
-            commands.parse_and_execute(permitions::ADMIN, command);
+            commands.parse_and_execute(permissions::ADMIN, command);
         } catch (ServerCommands::error &ex) {
             std::cerr << ex.what() << std::endl;
         } catch (Server::error &ex) {

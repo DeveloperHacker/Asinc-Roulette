@@ -10,24 +10,24 @@ DataBase::DataBase(const std::string &name
 
 DataBase::user_t DataBase::get_user(const std::string &login) {
     try {
-        SQLite::Statement query(*database, "SELECT password, permition, balance FROM users WHERE login = ?");
+        SQLite::Statement query(*database, "SELECT password, permission, balance FROM users WHERE login = ?");
         query.bind(1, login);
         auto &&status = query.executeStep();
         if (!status) throw DataBase::error("user hasn't found");
         std::string password = query.getColumn(0);
-        permition_t permition = query.getColumn(1);
+        permission_t permission = query.getColumn(1);
         money_t pouch = query.getColumn(2);
-        return DataBase::user_t{login, password, permition, pouch};
+        return DataBase::user_t{login, password, permission, pouch};
     } catch (SQLite::Exception &ex) {
         throw DataBase::error("user hasn't found");
     }
 }
 
-void DataBase::new_user(const std::string &login, const std::string &password, permition_t permition) {
+void DataBase::new_user(const std::string &login, const std::string &password, permission_t permission) {
     SQLite::Statement query(*database, "INSERT INTO users VALUES (?, ?, ?, ?)");
     query.bind(1, login);
     query.bind(2, password);
-    query.bind(3, permition);
+    query.bind(3, permission);
     query.bind(4, other::START_UP_CAPITAL);
     try {
         SQLite::Transaction transaction(*database);
@@ -38,9 +38,9 @@ void DataBase::new_user(const std::string &login, const std::string &password, p
     }
 }
 
-void DataBase::set_user_permition(const std::string &login, permition_t permition) {
-    SQLite::Statement query(*database, "UPDATE users SET permition = ? WHERE login = ?");
-    query.bind(1, permition);
+void DataBase::set_user_permission(const std::string &login, permission_t permission) {
+    SQLite::Statement query(*database, "UPDATE users SET permission = ? WHERE login = ?");
+    query.bind(1, permission);
     query.bind(2, login);
     try {
         SQLite::Transaction transaction(*database);
@@ -64,9 +64,9 @@ void DataBase::set_user_balance(const std::string &login, money_t pouch) {
     }
 }
 
-permition_t DataBase::get_user_permition(const std::string &login) {
+permission_t DataBase::get_user_permission(const std::string &login) {
     auto &&user = get_user(login);
-    return user.permition;
+    return user.permission;
 }
 
 money_t DataBase::get_user_pouch(const std::string &login) {
@@ -81,21 +81,21 @@ void DataBase::init(const std::string &name) {
     db.exec("CREATE TABLE users ("
                     "login TEXT NOT NULL PRIMARY KEY, "
                     "password TEXT NOT NULL, "
-                    "permition INT NOT NULL,"
+                    "permission INT NOT NULL,"
                     "balance INT NOT NULL"
                     ")");
     auto &&admin_login = other::ADMIN;
     auto &&admin_password = other::ADMIN;
-    auto &&permition = std::to_string(permitions::ADMIN | permitions::STAFF);
+    auto &&permission = std::to_string(permissions::ADMIN | permissions::STAFF);
     auto &&start_up_capital = std::to_string(other::START_UP_CAPITAL);
-    auto &&guest_permition = std::to_string(permitions::GUEST);
+    auto &&guest_permission = std::to_string(permissions::GUEST);
     auto &&guest_login = other::GUEST;
     auto &&guest_password = other::GUEST;
-    db.exec("INSERT INTO users VALUES ('admin', 'admin', " + permition + ", 10000000)");
+    db.exec("INSERT INTO users VALUES ('admin', 'admin', " + permission + ", 10000000)");
     db.exec("INSERT INTO users VALUES ("
                     "'" + guest_login + "', "
                     "'" + guest_password + "', "
-                    "" + guest_permition + ", "
+                    "" + guest_permission + ", "
                     "" + start_up_capital + ")");
     transaction.commit();
 }
