@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../tcp/TCPClient.h"
+#include "../tcp/TransferClient.h"
 #include "Session.h"
 
 class CryptoClient : public TCPClient {

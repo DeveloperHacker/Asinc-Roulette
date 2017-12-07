@@ -1,5 +1,5 @@
 #include <condition_variable>
-#include "../tcp/TCPClient.h"
+#include "../tcp/TransferClient.h"
 #include "../../crypto/Transfer.h"
 #include "Server.h"
 #include "config.h"

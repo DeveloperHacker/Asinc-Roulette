@@ -1,6 +1,6 @@
 #include "SessionClient.h"
 #include "config.h"
-#include "../tcp/TCPServer.h"
+#include "../tcp/TransferServer.h"
 
 CryptoClient::CryptoClient(int domain, int type, int protocol, address_t &address
 ) : TCPClient(domain, type, protocol, address), session(), state(INIT) {

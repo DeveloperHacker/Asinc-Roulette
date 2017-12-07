@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../tcp/Socket.h"
-#include "../tcp/TCPServer.h"
+#include "../tcp/TransferServer.h"
 #include "../../crypto/Transfer.h"
 #include "../../crypto/CryptoServer.h"
 #include <iostream>

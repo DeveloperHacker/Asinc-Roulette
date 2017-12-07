@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../tcp/TCPServer.h"
+#include "../tcp/TransferServer.h"
 #include "Session.h"
 
-class SessionServer : public TCPServer {
+class SessionServer : public TransferServer {
 public:
     enum State {
         INIT,

@@ -3,7 +3,7 @@
 #include "config.h"
 
 SessionServer::SessionServer(int domain, int type, int protocol, address_t &address
-) : TCPServer(domain, type, protocol, address), clients() {
+) : TransferServer(domain, type, protocol, address), clients() {
 }
 
 bool SessionServer::handle(id_t id, address_t address, const std::string &message) {
@@ -41,7 +41,7 @@ void SessionServer::raw_broadcast(const char *message) {
 }
 
 void SessionServer::raw_broadcast(const std::string &message) {
-    TCPServer::broadcast(crypto::RAW_MESSAGE_PREFIX + message);
+    TransferServer::broadcast(crypto::RAW_MESSAGE_PREFIX + message);
 }
 
 void SessionServer::raw_send(id_t id, const char *message) {
@@ -50,7 +50,7 @@ void SessionServer::raw_send(id_t id, const char *message) {
 }
 
 void SessionServer::raw_send(id_t id, const std::string &message) {
-    TCPServer::send(id, crypto::RAW_MESSAGE_PREFIX + message);
+    TransferServer::send(id, crypto::RAW_MESSAGE_PREFIX + message);
 }
 
 void SessionServer::raw_send(const std::vector<id_t> &ids, const char *message) {
@@ -59,7 +59,7 @@ void SessionServer::raw_send(const std::vector<id_t> &ids, const char *message) 
 }
 
 void SessionServer::raw_send(const std::vector<id_t> &ids, const std::string &message) {
-    TCPServer::send(ids, crypto::RAW_MESSAGE_PREFIX + message);
+    TransferServer::send(ids, crypto::RAW_MESSAGE_PREFIX + message);
 }
 
 void SessionServer::broadcast(const char *message) {
@@ -86,7 +86,7 @@ void SessionServer::send(id_t id, const std::string &message) {
     auto &&session = entry->second.first;
     auto &&encrypted = Session::pack_and_encrypt_if_needed(*session, message);
     std::cout << "[DEBUG] ESEND " << encrypted << std::endl;
-    TCPServer::send(id, encrypted);
+    TransferServer::send(id, encrypted);
 }
 
 void SessionServer::send(const std::vector<id_t> &ids, const char *message) {

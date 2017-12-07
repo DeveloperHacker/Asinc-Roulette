@@ -31,7 +31,7 @@ using connections_iterator = std::unordered_map<id_t, std::shared_ptr<Connection
 
 using handle_signature = std::function<bool(id_t, address_t, const std::string &)>;
 
-class TCPServer {
+class TransferServer {
 public:
     class error : public std::runtime_error {
         using std::runtime_error::runtime_error;
@@ -58,9 +58,9 @@ private:
     std::mutex mutex;
 
 public:
-    TCPServer(int domain, int type, int protocol, address_t &address);
+    TransferServer(int domain, int type, int protocol, address_t &address);
 
-    virtual ~TCPServer();
+    virtual ~TransferServer();
 
     bool start();
 

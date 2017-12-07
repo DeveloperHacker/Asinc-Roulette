@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Commands.h"
-#include "../../src/tcp/TCPClient.h"
+#include "../tcp/TransferClient.h"
 #include "../core/Client.h"
 
 class Client;

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "../commands/Commands.h"
-#include "../../src/tcp/TCPServer.h"
+#include "../tcp/TransferServer.h"
 
 class SimpleServerCommands : public Commands {
 public:
-    explicit SimpleServerCommands(TCPServer &server) : Commands() {
+    explicit SimpleServerCommands(TransferServer &server) : Commands() {
         impl_t help = [this](permission_t permission, const args_t &arguments) -> bool {
             if (!arguments.empty()) {
                 std::cerr << "unexpected help arguments" << std::endl;
