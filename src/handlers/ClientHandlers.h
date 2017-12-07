@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Handlers.h"
-#include "../../lib/json/src/json.hpp"
+#include "json/src/json.hpp"
 
 using json = nlohmann::json;
 

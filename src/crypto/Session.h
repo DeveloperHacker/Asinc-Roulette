@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../../lib/crypto/Crypto.h"
+#include "crypto/Crypto.h"
 #include <string>
 #include <vector>
 #include <stdexcept>
 
 
-class Transfer {
+class Session {
 public:
     class error : public std::runtime_error {
         using std::runtime_error::runtime_error;
@@ -24,9 +24,9 @@ private:
     State state;
 
 public:
-    Transfer();
+    Session();
 
-    explicit Transfer(const std::string &public_key);
+    explicit Session(const std::string &public_key);
 
     std::string public_key();
 
@@ -35,10 +35,6 @@ public:
     std::string encrypt(const std::string &message);
 
     std::string decrypt(const std::string &message);
-
-    std::string encrypt(const char *message);
-
-    std::string decrypt(const char *message);
 
 private:
     std::vector<unsigned char> master_init(const std::vector<unsigned char> &message);
@@ -54,9 +50,9 @@ private:
     std::vector<unsigned char> aes_decrypt(const std::string &message);
 
 public:
-    static std::string pack_and_encrypt_if_needed(Transfer &transfer, const std::string &message);
+    static std::string pack_and_encrypt_if_needed(Session &session, const std::string &message);
 
-    static std::string unpack_and_decrypt_if_needed(Transfer &transfer, const std::string &message);
+    static std::string unpack_and_decrypt_if_needed(Session &session, const std::string &message);
 
     static std::string unpack(const std::string &message);
 };

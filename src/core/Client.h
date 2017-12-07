@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../crypto/CryptoClient.h"
+#include "../crypto/SessionClient.h"
 #include "../commands/permissions.h"
 #include "../handlers/ClientHandlers.h"
 #include "../commands/ClientCommands.h"

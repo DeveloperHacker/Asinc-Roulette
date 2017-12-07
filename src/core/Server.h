@@ -1,17 +1,17 @@
 #pragma once
 
 #include <unordered_set>
-#include "../crypto/CryptoServer.h"
+#include "../crypto/SessionServer.h"
 #include "../handlers/ServerHandlers.h"
 #include "../commands/permissions.h"
 #include "../core/DataBase.h"
-#include "../../lib/json/src/json.hpp"
+#include "json/src/json.hpp"
 
 using json = nlohmann::json;
 
 class ServerHandlers;
 
-class Server : public CryptoServer {
+class Server : public SessionServer {
 public:
     struct bet_t {
         std::string type;
@@ -37,9 +37,9 @@ private:
     std::unordered_map<std::string, session_t> sessions;
 
 public:
-    using CryptoServer::join;
+    using SessionServer::join;
 
-    using CryptoServer::send;
+    using SessionServer::send;
 
 public:
     Server(int domain, int type, int protocol, address_t &address);

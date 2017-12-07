@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../tcp/TCPServer.h"
-#include "Transfer.h"
+#include "Session.h"
 
-class CryptoServer : public TCPServer {
+class SessionServer : public TCPServer {
 public:
     enum State {
         INIT,
@@ -11,10 +11,10 @@ public:
     };
 
 private:
-    std::unordered_map<id_t, std::pair<std::shared_ptr<Transfer>, State>> clients;
+    std::unordered_map<id_t, std::pair<std::shared_ptr<Session>, State>> clients;
 
 public:
-    CryptoServer(int domain, int type, int protocol, address_t &address);
+    SessionServer(int domain, int type, int protocol, address_t &address);
 
     void broadcast(const char *message) override;
 

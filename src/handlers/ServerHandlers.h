@@ -3,7 +3,7 @@
 #include "Handlers.h"
 #include "../../src/tcp/Socket.h"
 #include "../core/Server.h"
-#include "../../lib/json/src/json.hpp"
+#include "json/src/json.hpp"
 
 using json = nlohmann::json;
 

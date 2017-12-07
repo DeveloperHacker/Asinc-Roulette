@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../tcp/TCPClient.h"
-#include "Transfer.h"
+#include "Session.h"
 
 class CryptoClient : public TCPClient {
 public:
@@ -12,7 +12,7 @@ public:
     };
 
 private:
-    Transfer transfer;
+    Session session;
     State state;
 
 public:

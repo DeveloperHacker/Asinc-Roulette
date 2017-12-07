@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Socket.h"
-#include "../../lib/thread_pool/ThreadPool.h"
+#include "thread_pool/ThreadPool.h"
 #include <thread>
 #include <unordered_map>
 #include <mutex>

@@ -4,7 +4,7 @@
 using json = nlohmann::json;
 
 Server::Server(int domain, int type, int protocol, address_t &address
-) : CryptoServer(domain, type, protocol, address),
+) : SessionServer(domain, type, protocol, address),
     handlers(std::make_shared<ServerHandlers>()),
     data_base(other::DATA_BASE) {
     std::srand(std::time(nullptr));
@@ -37,13 +37,13 @@ bool Server::crypto_handle(id_t id, address_t address, const std::string &messag
 }
 
 void Server::connect_handle(id_t id, address_t address) {
-    CryptoServer::connect_handle(id, address);
+    SessionServer::connect_handle(id, address);
     auto &&user = data_base.get_user(other::GUEST);
     add_user(id, user);
 }
 
 void Server::disconnect_handle(id_t id, address_t address) {
-    CryptoServer::disconnect_handle(id, address);
+    SessionServer::disconnect_handle(id, address);
     do_disconnect(id);
 }
 
