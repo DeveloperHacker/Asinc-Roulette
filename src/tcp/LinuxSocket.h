@@ -30,8 +30,6 @@ public:
 
     ~LinuxSocket();
 
-    bool select();
-
     bool select(timeval *timeout);
 
     address_t get_address() const;
@@ -52,13 +50,9 @@ public:
 
     std::string receive();
 
-    void close();
+    int close();
 
-    int safe_close();
-
-    void shutdown();
-
-    int safe_shutdown();
+    int shutdown();
 
     static address_t address(const std::string &host, uint16_t port);
 

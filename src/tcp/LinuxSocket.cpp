@@ -69,16 +69,9 @@ void LinuxSocket::send(std::string message) {
     }
 }
 
-int LinuxSocket::safe_close() {
+int LinuxSocket::close() {
     return ::close(descriptor);
 }
-
-void LinuxSocket::close() {
-    auto success = safe_close();
-    if (success < 0)
-        throw LinuxSocket::error("close: error");
-}
-
 
 socket_t LinuxSocket::accept() {
     auto socket = ::accept(descriptor, nullptr, nullptr);
@@ -116,17 +109,8 @@ address_t LinuxSocket::address(uint16_t port) {
     return address;
 }
 
-void LinuxSocket::shutdown() {
-    auto &&success = safe_shutdown();
-    if (success < 0) throw LinuxSocket::error("shutdown: error");
-}
-
-int LinuxSocket::safe_shutdown() {
+int LinuxSocket::shutdown() {
     return ::shutdown(descriptor, SHUT_RDWR);
-}
-
-bool LinuxSocket::select() {
-    return select(nullptr);
 }
 
 bool LinuxSocket::select(timeval *timeout) {

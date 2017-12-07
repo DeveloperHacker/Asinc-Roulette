@@ -55,8 +55,8 @@ void TCPClient::stop() {
     std::unique_lock<std::mutex> lock(mutex);
     if (!stop_requests) {
         stop_requests = true;
-        socket.safe_shutdown();
-        socket.safe_close();
+        socket.shutdown();
+        socket.close();
     }
 }
 

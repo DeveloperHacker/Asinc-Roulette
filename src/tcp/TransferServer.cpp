@@ -46,7 +46,7 @@ void task(std::shared_ptr<Connection> connection, const handle_signature &handle
     connection->close = close;
     connection->free = true;
     if (connection->close)
-        socket.safe_shutdown();
+        socket.shutdown();
 }
 
 void TransferServer::disconnect_connections() {
@@ -194,8 +194,8 @@ connections_iterator TransferServer::unsafe_kill(connections_iterator it) {
     auto &&id = it->first;
     auto &&connection = it->second;
     Socket socket(connection->descriptor);
-    socket.safe_shutdown();
-    socket.safe_close();
+    socket.shutdown();
+    socket.close();
     it = connections.erase(it);
     descriptors.erase(connection->descriptor);
     disconnect_handle(id, connection->address);
