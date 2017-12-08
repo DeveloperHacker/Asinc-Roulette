@@ -10,11 +10,6 @@
 #define PRINT_LINE_NUMBER() \
     std::cout << __func__ << ":" << __LINE__ << std::endl;
 
-namespace address {
-    const std::string SERVER_HOST("127.0.0.1"); // NOLINT
-    const uint16_t SERVER_PORT = 7777;
-}
-
 namespace parts {
     const std::string STATUS("code"); // NOLINT
     const std::string COMMAND("command"); // NOLINT

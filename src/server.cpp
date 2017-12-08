@@ -1,13 +1,18 @@
 
 #include "commands/Command.h"
-#include "core/config.h"
+#include "config.h"
 #include "tcp/Socket.h"
 #include "core/Server.h"
 #include "commands/ServerCommands.h"
+#include "tcp/LinuxTCPSocket.h"
 
 int main() {
-    auto &&address = Socket::address(address::SERVER_PORT);
-    Server server(AF_INET, SOCK_STREAM, 0, address);
+    auto &&address = LinuxTCPSocket::make_address(address::SERVER_PORT);
+    auto &&socket = std::make_shared<LinuxTCPSocket>(AF_INET, SOCK_STREAM, 0);
+    socket->bind(address);
+    socket->set_options(SO_REUSEADDR);
+    socket->listen(1);
+    Server server(socket);
     ServerCommands commands(server);
     server.start();
     while (!server.stopped()) {

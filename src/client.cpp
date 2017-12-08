@@ -1,18 +1,26 @@
-#include "tcp/Socket.h"
-#include "core/config.h"
+
+#include "config.h"
 #include "core/Client.h"
+
+#ifdef _WIN32
+    #include "tcp/WinTCPSocket.h"
+#else
+    #include "tcp/LinuxTCPSocket.h"
+#endif
 
 int main() {
 #ifdef _WIN32
-    Socket::startup();
-    auto &&address = Socket::address(AF_INET, SOCK_STREAM, 0, address::SERVER_HOST, address::SERVER_PORT);
+    WinTCPSocket::startup();
+    auto &&address = WinTCPSocket::make_address(AF_INET, SOCK_STREAM, 0, address::SERVER_HOST, address::SERVER_PORT);
 #else
-    auto &&address = Socket::address(address::SERVER_HOST, address::SERVER_PORT);
+    auto &&address = LinuxTCPSocket::make_address(address::SERVER_HOST, address::SERVER_PORT);
+    auto &&socket = std::make_shared<LinuxTCPSocket>(AF_INET, SOCK_STREAM, 0);
 #endif
-    Client client(AF_INET, SOCK_STREAM, 0, address);
+    socket->connect(address);
+    Client client(socket);
     client.start();
     client.join();
 #ifdef _WIN32
-    Socket::cleanup();
+    WinTCPSocket::cleanup();
 #endif
 }

@@ -2,9 +2,7 @@
 #include "config.h"
 #include "../tcp/TransferServer.h"
 
-CryptoClient::CryptoClient(int domain, int type, int protocol, address_t &address
-) : TCPClient(domain, type, protocol, address), session(), state(INIT) {
-}
+CryptoClient::CryptoClient(std::shared_ptr<Socket> socket) : TransferClient(socket), state(INIT) {}
 
 void CryptoClient::output() {
     switch (state) {
@@ -24,7 +22,7 @@ void CryptoClient::output() {
 
 void CryptoClient::input(const std::string &message) {
     if (state == INIT)
-        throw TCPClient::error("client must send rsa public key before receiving message");
+        throw TransferClient::error("client must send rsa public key before receiving message");
     std::cout << "[DEBUG] ERECV " << message << std::endl;
     auto &&decrypted = Session::unpack_and_decrypt_if_needed(session, message);
     std::cout << "[DEBUG] DRECV " << decrypted << std::endl;
@@ -34,7 +32,7 @@ void CryptoClient::input(const std::string &message) {
         case WAIT: {
             state = READY;
             if (decrypted != crypto::INIT_MESSAGE)
-                throw TCPClient::error("wrong initial message");
+                throw TransferClient::error("wrong initial message");
             break;
         }
         case READY: {
@@ -53,7 +51,7 @@ void CryptoClient::send(const std::string &message) {
     std::cout << "[DEBUG] MSEND " << message << std::endl;
     auto &&encrypted = Session::pack_and_encrypt_if_needed(session, message);
     std::cout << "[DEBUG] ESEND " << encrypted << std::endl;
-    TCPClient::send(encrypted);
+    TransferClient::send(encrypted);
 }
 
 void CryptoClient::raw_send(const char *message) {
@@ -62,5 +60,6 @@ void CryptoClient::raw_send(const char *message) {
 }
 
 void CryptoClient::raw_send(const std::string &message) {
-    TCPClient::send(crypto::RAW_MESSAGE_PREFIX + message);
+    std::cout << "[DEBUG] RSEND " << message << std::endl;
+    TransferClient::send(crypto::RAW_MESSAGE_PREFIX + message);
 }

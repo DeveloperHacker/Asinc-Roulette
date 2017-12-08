@@ -23,7 +23,7 @@ public:
     using CryptoClient::send;
 
 public:
-    Client(int domain, int type, int protocol, address_t &address);
+    explicit Client(std::shared_ptr<Socket> socket);
 
     void login(const std::string &login, const std::string &password);
 

@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 class Server;
 
-class ServerHandlers : public Handlers<bool, Server &, id_t, address_t, json &> {
+class ServerHandlers : public Handlers<bool, Server &, id_t, json &> {
 public:
     ServerHandlers();
 };

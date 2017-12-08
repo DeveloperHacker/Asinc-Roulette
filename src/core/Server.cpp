@@ -3,8 +3,7 @@
 
 using json = nlohmann::json;
 
-Server::Server(int domain, int type, int protocol, address_t &address
-) : SessionServer(domain, type, protocol, address),
+Server::Server(std::shared_ptr<Socket> socket) : SessionServer(socket),
     handlers(std::make_shared<ServerHandlers>()),
     data_base(other::DATA_BASE) {
     std::srand(std::time(nullptr));
@@ -17,13 +16,13 @@ void Server::handle_error(id_t id, const std::string &command, const std::string
     });
 }
 
-bool Server::crypto_handle(id_t id, address_t address, const std::string &message) {
+bool Server::crypto_handle(id_t id, const std::string &message) {
     auto &&request = json::parse(message);
     std::string command = request[parts::COMMAND];
     auto &&data = request[parts::DATA];
     try {
         auto &&permission = get_permission(id);
-        return handlers->execute(permission, command, *this, id, address, data);
+        return handlers->execute(permission, command, *this, id, data);
     } catch (ServerHandlers::error &ex) {
         handle_error(id, command, ex.what());
         return false;
@@ -36,14 +35,14 @@ bool Server::crypto_handle(id_t id, address_t address, const std::string &messag
     }
 }
 
-void Server::connect_handle(id_t id, address_t address) {
-    SessionServer::connect_handle(id, address);
+void Server::connect_handle(id_t id) {
+    SessionServer::connect_handle(id);
     auto &&user = data_base.get_user(other::GUEST);
     add_user(id, user);
 }
 
-void Server::disconnect_handle(id_t id, address_t address) {
-    SessionServer::disconnect_handle(id, address);
+void Server::disconnect_handle(id_t id) {
+    SessionServer::disconnect_handle(id);
     do_disconnect(id);
 }
 

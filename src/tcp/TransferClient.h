@@ -6,7 +6,7 @@
 #include <functional>
 #include "Socket.h"
 
-class TCPClient {
+class TransferClient {
 public:
     class error : public std::runtime_error {
         using std::runtime_error::runtime_error;
@@ -17,7 +17,7 @@ public:
 private:
     bool stop_requests;
 
-    Socket socket;
+    std::shared_ptr<Socket> socket;
 
     std::thread input_thread;
 
@@ -26,7 +26,7 @@ private:
     std::mutex mutex;
 
 public:
-    TCPClient(int domain, int type, int protocol, const address_t &address);
+    explicit TransferClient(std::shared_ptr<Socket> socket);
 
     bool start();
 
@@ -44,5 +44,5 @@ protected:
     virtual void output() = 0;
 
 private:
-    void safe_run(const std::function<void()> &function);
+    void loop(const std::function<void()> &function);
 };

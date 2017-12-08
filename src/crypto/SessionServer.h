@@ -14,7 +14,7 @@ private:
     std::unordered_map<id_t, std::pair<std::shared_ptr<Session>, State>> clients;
 
 public:
-    SessionServer(int domain, int type, int protocol, address_t &address);
+    SessionServer(std::shared_ptr<Socket> socket);
 
     void broadcast(const char *message) override;
 
@@ -41,11 +41,11 @@ public:
     void raw_send(const std::vector<id_t> &ids, const std::string &message);
 
 protected:
-    bool handle(id_t id, address_t address, const std::string &message) override;
+    bool handle(id_t id, const std::string &message) override;
 
-    void connect_handle(id_t id, address_t address) override;
+    void connect_handle(id_t id) override;
 
-    void disconnect_handle(id_t id, address_t address) override;
+    void disconnect_handle(id_t id) override;
 
-    virtual bool crypto_handle(id_t id, address_t address, const std::string &message) = 0;
+    virtual bool crypto_handle(id_t id, const std::string &message) = 0;
 };

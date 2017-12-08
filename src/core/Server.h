@@ -42,7 +42,7 @@ public:
     using SessionServer::send;
 
 public:
-    Server(int domain, int type, int protocol, address_t &address);
+    Server(std::shared_ptr<Socket> socket);
 
     void do_signin(id_t id, const std::string &login, const std::string &password);
 
@@ -118,9 +118,9 @@ private:
 protected:
     void handle_error(id_t id, const std::string &command, const std::string &message);
 
-    bool crypto_handle(id_t id, address_t address, const std::string &message) override;
+    bool crypto_handle(id_t id, const std::string &message) override;
 
-    void connect_handle(id_t id, address_t address) override;
+    void connect_handle(id_t id) override;
 
-    void disconnect_handle(id_t id, address_t address) override;
+    void disconnect_handle(id_t id) override;
 };

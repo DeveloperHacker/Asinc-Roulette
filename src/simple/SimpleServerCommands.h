@@ -62,17 +62,13 @@ public:
             }
             std::cout << " "
                       << std::setw(5) << std::left << "id"
-                      << std::setw(15) << std::left << "host"
-                      << "port" << std::endl;
+                      << "address" << std::endl;
             for (auto &&connection: connections) {
                 auto &&id = connection.first;
                 auto &&address = connection.second;
-                auto &&host = inet_ntoa(address.sin_addr);
-                auto &&port = address.sin_port;
-                std::cout << " "
-                          << std::setw(5) << std::left << id
-                          << std::setw(15) << std::left << host
-                          << port << std::endl;
+                std::cout << " " << std::setw(5) << std::left << id;
+                Socket::write(std::cout, address);
+                std::cout << std::endl;
             }
             return true;
         };

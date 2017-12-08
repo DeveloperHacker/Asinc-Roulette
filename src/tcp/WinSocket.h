@@ -78,7 +78,3 @@ public:
 
     friend std::ostream &operator<<(std::ostream &stream, const WinSocket &socket);
 };
-
-static std::ostream &operator<<(std::ostream &stream, address_t address) {
-    throw WinSocket::error("unsupported operation, address is null");
-}

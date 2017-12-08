@@ -1,12 +1,11 @@
 #include <algorithm>
+#include <iostream>
 #include "SessionServer.h"
 #include "config.h"
 
-SessionServer::SessionServer(int domain, int type, int protocol, address_t &address
-) : TransferServer(domain, type, protocol, address), clients() {
-}
+SessionServer::SessionServer(std::shared_ptr<Socket> socket) : TransferServer(socket) {}
 
-bool SessionServer::handle(id_t id, address_t address, const std::string &message) {
+bool SessionServer::handle(id_t id, const std::string &message) {
     auto &&client = clients.find(id);
     auto &&session = client->second.first;
     auto &&state = client->second.second;
@@ -21,17 +20,17 @@ bool SessionServer::handle(id_t id, address_t address, const std::string &messag
             return false;
         }
         case READY: {
-            return crypto_handle(id, address, decrypted);
+            return crypto_handle(id, decrypted);
         }
     }
 }
 
-void SessionServer::connect_handle(id_t id, address_t address) {
+void SessionServer::connect_handle(id_t id) {
     auto &&session = std::make_shared<Session>();
     clients.emplace(id, std::make_pair(session, INIT));
 }
 
-void SessionServer::disconnect_handle(id_t id, address_t address) {
+void SessionServer::disconnect_handle(id_t id) {
     clients.erase(id);
 }
 

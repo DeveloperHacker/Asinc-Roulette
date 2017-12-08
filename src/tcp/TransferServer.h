@@ -5,17 +5,13 @@
 #include <thread>
 #include <unordered_map>
 #include <mutex>
+#include <utility>
 
-#ifdef _WIN32
-    using id_t = int;
-#endif
+class Connection {
+public:
+    const id_t id;
 
-struct Connection {
-    id_t id;
-
-    socket_t descriptor;
-
-    address_t address;
+    const std::shared_ptr<Socket> socket;
 
     bool free;
 
@@ -23,13 +19,11 @@ struct Connection {
 
     std::mutex mutex;
 
-    Connection(id_t id, socket_t descriptor, address_t address) : // NOLINT
-            id(id), descriptor(descriptor), address(address), free(true), close(false) {}
+    Connection(id_t id, std::shared_ptr<Socket> socket) : // NOLINT
+            id(id), socket(socket), free(true), close(false) {}
 };
 
 using connections_iterator = std::unordered_map<id_t, std::shared_ptr<Connection>>::const_iterator;
-
-using handle_signature = std::function<bool(id_t, address_t, const std::string &)>;
 
 class TransferServer {
 public:
@@ -45,7 +39,7 @@ public:
     static const size_t TIMEOUT_USEC = 1000;
 
 private:
-    Socket socket;
+    std::shared_ptr<Socket> socket;
 
     std::thread thread;
 
@@ -58,7 +52,7 @@ private:
     std::mutex mutex;
 
 public:
-    TransferServer(int domain, int type, int protocol, address_t &address);
+    explicit TransferServer(std::shared_ptr<Socket> socket);
 
     virtual ~TransferServer();
 
@@ -70,7 +64,7 @@ public:
 
     bool stopped();
 
-    std::unordered_map<id_t, address_t> get_connections();
+    std::unordered_map<id_t, std::shared_ptr<address_t>> get_connections();
 
     void kill(id_t id);
 
@@ -87,11 +81,11 @@ public:
     virtual void send(const std::vector<id_t> &ids, const std::string &message); // NOLINT
 
 protected:
-    virtual bool handle(id_t id, address_t address, const std::string &message) = 0;
+    virtual bool handle(id_t id, const std::string &message) = 0;
 
-    virtual void connect_handle(id_t id, address_t address) = 0;
+    virtual void connect_handle(id_t id) = 0;
 
-    virtual void disconnect_handle(id_t id, address_t address) = 0;
+    virtual void disconnect_handle(id_t id) = 0;
 
 private:
     void run();
@@ -102,12 +96,12 @@ private:
 
     void handle_new_connection(int epoll_descriptor, id_t &max_id);
 
-    void handle_connection(socket_t descriptor, ThreadPool &pool);
+    void handle_connection(std::shared_ptr<Connection> connection, ThreadPool &pool);
 
     std::shared_ptr<Connection> connection_by_descriptor(socket_t descriptor);
 
     connections_iterator unsafe_kill(connections_iterator it);
 
 public:
-    static std::string format(id_t id, address_t address);
+    static std::string format(id_t id, std::shared_ptr<Socket> socket);
 };

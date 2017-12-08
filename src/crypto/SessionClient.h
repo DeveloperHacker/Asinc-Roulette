@@ -3,7 +3,7 @@
 #include "../tcp/TransferClient.h"
 #include "Session.h"
 
-class CryptoClient : public TCPClient {
+class CryptoClient : public TransferClient {
 public:
     enum State {
         INIT,
@@ -16,7 +16,7 @@ private:
     State state;
 
 public:
-    CryptoClient(int domain, int type, int protocol, address_t &address);
+    CryptoClient(std::shared_ptr<Socket> socket);
 
     void send(const char *message) override;
 

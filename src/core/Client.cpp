@@ -3,8 +3,7 @@
 
 using json = nlohmann::json;
 
-Client::Client(int domain, int type, int protocol, address_t &address
-) : CryptoClient(domain, type, protocol, address), permission(permissions::GUEST),
+Client::Client(std::shared_ptr<Socket> socket) : CryptoClient(socket), permission(permissions::GUEST),
     handlers(std::make_shared<ClientHandlers>()),
     commands(std::make_shared<ClientCommands>()) {
     commands->init(*this);
