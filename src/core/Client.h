@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../crypto/SessionClient.h"
+#include "../session/SessionClient.h"
 #include "../commands/permissions.h"
 #include "../handlers/ClientHandlers.h"
 #include "../commands/ClientCommands.h"
@@ -9,7 +9,7 @@ class ClientHandlers;
 
 class ClientCommands;
 
-class Client : public CryptoClient {
+class Client : public SessionClient {
 public:
     permission_t permission;
 
@@ -18,9 +18,9 @@ private:
     std::shared_ptr<ClientCommands> commands;
 
 public:
-    using CryptoClient::join;
+    using SessionClient::join;
 
-    using CryptoClient::send;
+    using SessionClient::send;
 
 public:
     explicit Client(std::shared_ptr<Socket> socket);
@@ -65,7 +65,7 @@ private:
     void send(const std::string &command, const json &data);
 
 protected:
-    void crypto_output() override;
+    void session_output() override;
 
-    void crypto_input(const std::string &message) override;
+    void session_input(const std::string &message) override;
 };

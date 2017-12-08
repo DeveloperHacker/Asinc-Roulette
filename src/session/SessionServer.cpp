@@ -20,7 +20,7 @@ bool SessionServer::handle(id_t id, const std::string &message) {
             return false;
         }
         case READY: {
-            return crypto_handle(id, decrypted);
+            return session_handle(id, decrypted);
         }
     }
 }

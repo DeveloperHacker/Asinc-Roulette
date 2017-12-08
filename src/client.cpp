@@ -3,9 +3,9 @@
 #include "core/Client.h"
 
 #ifdef _WIN32
-    #include "tcp/WinTCPSocket.h"
+    #include "transfer/WinTCPSocket.h"
 #else
-    #include "tcp/LinuxTCPSocket.h"
+    #include "transfer/LinuxTCPSocket.h"
 #endif
 
 int main() {

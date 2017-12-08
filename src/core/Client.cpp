@@ -3,13 +3,13 @@
 
 using json = nlohmann::json;
 
-Client::Client(std::shared_ptr<Socket> socket) : CryptoClient(socket), permission(permissions::GUEST),
+Client::Client(std::shared_ptr<Socket> socket) : SessionClient(socket), permission(permissions::GUEST),
     handlers(std::make_shared<ClientHandlers>()),
     commands(std::make_shared<ClientCommands>()) {
     commands->init(*this);
 }
 
-void Client::crypto_input(const std::string &message) {
+void Client::session_input(const std::string &message) {
     try {
         auto &&response = json::parse(message);
         std::string status = response[parts::STATUS];
@@ -27,7 +27,7 @@ void Client::crypto_input(const std::string &message) {
     }
 }
 
-void Client::crypto_output() {
+void Client::session_output() {
     try {
         std::string command;
         std::getline(std::cin, command);

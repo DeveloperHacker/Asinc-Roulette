@@ -12,22 +12,22 @@ set(POOL lib/thread_pool/ThreadPool.h)
 include_directories(lib)
 
 if(WIN32)
-    set(SOCKET src/tcp/Socket.h src/tcp/WinSocket.cpp src/tcp/WinSocket.h)
+    set(SOCKET src/transfer/Socket.h src/transfer/WinSocket.cpp src/transfer/WinSocket.h)
 else()
-    set(SOCKET src/tcp/Socket.h src/tcp/LinuxTCPSocket.cpp src/tcp/LinuxTCPSocket.h)
+    set(SOCKET src/transfer/Socket.h src/transfer/LinuxTCPSocket.cpp src/transfer/LinuxTCPSocket.h)
 endif()
 
-set(TRANSFER_SERVER src/tcp/TransferServer.cpp src/tcp/TransferServer.h ${POOL} ${SOCKET})
-set(TRANSFER_CLIENT src/tcp/TransferClient.h src/tcp/TransferClient.cpp ${SOCKET})
+set(TRANSFER_SERVER src/transfer/TransferServer.cpp src/transfer/TransferServer.h ${POOL} ${SOCKET})
+set(TRANSFER_CLIENT src/transfer/TransferClient.h src/transfer/TransferClient.cpp ${SOCKET})
 
-set(STRINGS src/crypto/strings.h)
+set(STRINGS src/session/strings.h)
 
-set(SESSION src/crypto/Session.cpp src/crypto/Session.h ${CRYPTO} ${BASE64} ${JSON} ${STRINGS})
-set(SESSION_SERVER src/crypto/config.h src/crypto/SessionServer.cpp src/crypto/SessionServer.h ${TRANSFER_SERVER} ${SESSION})
-set(SESSION_CLIENT src/crypto/config.h src/crypto/SessionClient.cpp src/crypto/SessionClient.h ${TRANSFER_CLIENT} ${SESSION})
+set(SESSION src/session/Session.cpp src/session/Session.h ${CRYPTO} ${BASE64} ${JSON} ${STRINGS})
+set(SESSION_SERVER src/session/config.h src/session/SessionServer.cpp src/session/SessionServer.h ${TRANSFER_SERVER} ${SESSION})
+set(SESSION_CLIENT src/session/config.h src/session/SessionClient.cpp src/session/SessionClient.h ${TRANSFER_CLIENT} ${SESSION})
 
 set(ECHO_SERVER src/simple/Server.cpp src/simple/Server.h ${SESSION_SERVER})
-set(READ_CLIENT src/simple/Client.cpp src/simple/Client.h ${SESSION_CLIENT} src/crypto/config.h)
+set(READ_CLIENT src/simple/Client.cpp src/simple/Client.h ${SESSION_CLIENT} src/session/config.h)
 
 set(DATABASE src/core/DataBase.cpp src/core/DataBase.h)
 set(SERVER src/core/config.h src/core/Server.cpp src/core/Server.h ${SESSION_SERVER} ${DATABASE} ${JSON})

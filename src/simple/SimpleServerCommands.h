@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../commands/Commands.h"
-#include "../tcp/TransferServer.h"
+#include "../transfer/TransferServer.h"
 
 class SimpleServerCommands : public Commands {
 public:

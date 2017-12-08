@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../tcp/Socket.h"
-#include "../tcp/TransferServer.h"
-#include "../../crypto/Transfer.h"
-#include "../../crypto/CryptoServer.h"
+#include "../transfer/Socket.h"
+#include "../transfer/TransferServer.h"
+#include "../../session/Transfer.h"
+#include "../../session/sessionServer.h"
 #include <iostream>
 #include <algorithm>
 

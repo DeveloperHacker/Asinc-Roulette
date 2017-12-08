@@ -1,9 +1,9 @@
 #include <condition_variable>
-#include "../tcp/TransferClient.h"
-#include "../../crypto/Transfer.h"
+#include "../transfer/TransferClient.h"
+#include "../../session/Transfer.h"
 #include "Server.h"
 #include "config.h"
-#include "../../crypto/CryptoClient.h"
+#include "../../session/sessionClient.h"
 
 class Client : public CryptoClient {
 public:

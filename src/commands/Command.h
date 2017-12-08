@@ -5,7 +5,7 @@
 #include <vector>
 #include <iterator>
 #include <iostream>
-#include "../../src/crypto/strings.h"
+#include "../../src/session/strings.h"
 
 class Command {
 private:

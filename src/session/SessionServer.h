@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../tcp/TransferServer.h"
+#include "../transfer/TransferServer.h"
 #include "Session.h"
 
 class SessionServer : public TransferServer {
@@ -47,5 +47,5 @@ protected:
 
     void disconnect_handle(id_t id) override;
 
-    virtual bool crypto_handle(id_t id, const std::string &message) = 0;
+    virtual bool session_handle(id_t id, const std::string &message) = 0;
 };

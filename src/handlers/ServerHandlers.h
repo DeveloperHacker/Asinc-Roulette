@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Handlers.h"
-#include "../../src/tcp/Socket.h"
+#include "../../src/transfer/Socket.h"
 #include "../core/Server.h"
 #include "json/src/json.hpp"
 

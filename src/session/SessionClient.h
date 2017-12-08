@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../tcp/TransferClient.h"
+#include "../transfer/TransferClient.h"
 #include "Session.h"
 
-class CryptoClient : public TransferClient {
+class SessionClient : public TransferClient {
 public:
     enum State {
         INIT,
@@ -16,7 +16,7 @@ private:
     State state;
 
 public:
-    CryptoClient(std::shared_ptr<Socket> socket);
+    SessionClient(std::shared_ptr<Socket> socket);
 
     void send(const char *message) override;
 
@@ -27,9 +27,9 @@ public:
     void raw_send(const std::string &message);
 
 protected:
-    virtual void crypto_output() = 0;
+    virtual void session_output() = 0;
 
-    virtual void crypto_input(const std::string &message) = 0;
+    virtual void session_input(const std::string &message) = 0;
 
     void output() override;
 

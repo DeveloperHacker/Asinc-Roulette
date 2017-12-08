@@ -1,7 +1,7 @@
 #pragma once
 
 #include <unordered_set>
-#include "../crypto/SessionServer.h"
+#include "../session/SessionServer.h"
 #include "../handlers/ServerHandlers.h"
 #include "../commands/permissions.h"
 #include "../core/DataBase.h"
@@ -118,7 +118,7 @@ private:
 protected:
     void handle_error(id_t id, const std::string &command, const std::string &message);
 
-    bool crypto_handle(id_t id, const std::string &message) override;
+    bool session_handle(id_t id, const std::string &message) override;
 
     void connect_handle(id_t id) override;
 

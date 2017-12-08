@@ -16,7 +16,7 @@ void Server::handle_error(id_t id, const std::string &command, const std::string
     });
 }
 
-bool Server::crypto_handle(id_t id, const std::string &message) {
+bool Server::session_handle(id_t id, const std::string &message) {
     auto &&request = json::parse(message);
     std::string command = request[parts::COMMAND];
     auto &&data = request[parts::DATA];

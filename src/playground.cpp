@@ -1,8 +1,8 @@
 
 #include <iostream>
-#include "crypto/Session.h"
-#include "crypto/strings.h"
-#include "crypto/config.h"
+#include "session/Session.h"
+#include "session/strings.h"
+#include "session/config.h"
 
 std::string random_string() {
     std::string string;

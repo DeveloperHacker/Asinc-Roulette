@@ -1,10 +1,10 @@
 
 #include "commands/Command.h"
 #include "config.h"
-#include "tcp/Socket.h"
+#include "transfer/Socket.h"
 #include "core/Server.h"
 #include "commands/ServerCommands.h"
-#include "tcp/LinuxTCPSocket.h"
+#include "transfer/LinuxTCPSocket.h"
 
 int main() {
     auto &&address = LinuxTCPSocket::make_address(address::SERVER_PORT);
