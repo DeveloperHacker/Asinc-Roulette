@@ -2,11 +2,9 @@
 #include <algorithm>
 #include <unistd.h>
 
-const std::string LinuxTCPSocket::DELIMITER("\r\n");
+LinuxTCPSocket::LinuxTCPSocket() : descriptor(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) {}
 
-LinuxTCPSocket::LinuxTCPSocket(int domain, int type, int protocol) : descriptor(::socket(domain, type, protocol)) {}
-
-LinuxTCPSocket::LinuxTCPSocket(socket_t socket) : descriptor(socket) {}
+LinuxTCPSocket::LinuxTCPSocket(socket_t descriptor) : descriptor(descriptor) {}
 
 LinuxTCPSocket::~LinuxTCPSocket() = default;
 

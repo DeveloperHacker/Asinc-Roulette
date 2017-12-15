@@ -1,6 +1,6 @@
 #include <functional>
-#include "TransferClient.h"
-#include "TransferServer.h"
+#include "../TransferClient.h"
+#include "../TransferServer.h"
 
 void TransferClient::loop(const std::function<void()> &function) {
     while (!stop_requests) {

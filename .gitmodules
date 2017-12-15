@@ -10,3 +10,6 @@
 [submodule "base64"]
 	path = lib/base64
 	url = git@github.com:ReneNyffenegger/cpp-base64.git
+[submodule "lib/SQLiteCpp"]
+	path = lib/SQLiteCpp
+	url = git@github.com:SRombauts/SQLiteCpp.git

@@ -8,12 +8,9 @@
 #include <stdexcept>
 #include <iomanip>
 #include <queue>
-#include "Socket.h"
+#include "../Socket.h"
 
 class LinuxTCPSocket : public Socket {
-public:
-    const static std::string DELIMITER;
-
 private:
     const socket_t descriptor;
     std::string buffer;
@@ -21,9 +18,9 @@ private:
     std::shared_ptr<address_t> address;
 
 public:
-    LinuxTCPSocket(int domain, int type, int protocol);
+    LinuxTCPSocket();
 
-    explicit LinuxTCPSocket(socket_t socket);
+    explicit LinuxTCPSocket(socket_t descriptor);
 
     ~LinuxTCPSocket();
 
