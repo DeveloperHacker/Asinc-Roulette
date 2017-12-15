@@ -6,14 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(TYPE UDP)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUDP")
 
-set(JSON lib/json/src/json.hpp)
-set(CRYPTO lib/crypto/Crypto.cpp lib/crypto/Crypto.h)
-set(BASE64 lib/base64/base64.cpp lib/base64/base64.h)
-set(POOL lib/thread_pool/ThreadPool.h)
-
 add_subdirectory(lib/SQLiteCpp)
 include_directories(lib)
-
 
 if (WIN32)
     if (${TYPE} STREQUAL UDP)
@@ -28,9 +22,8 @@ else ()
         set(SOCKET src/transfer/tcp/Socket.h src/transfer/tcp/LinuxSocket.cpp src/transfer/tcp/LinuxSocket.h)
     endif ()
 endif ()
-
 set(SOCKET src/transfer/Socket.h ${SOCKET})
-
+set(POOL lib/thread_pool/ThreadPool.h)
 if (${TYPE} STREQUAL UDP)
     set(TRANSFER_SERVER src/transfer/TransferServer.h src/transfer/udp/TransferServer.h src/transfer/udp/TransferServer.cpp ${SOCKET} ${POOL})
     set(TRANSFER_CLIENT src/transfer/TransferClient.h src/transfer/udp/TransferClient.h src/transfer/udp/TransferClient.cpp ${SOCKET})
@@ -39,9 +32,11 @@ elseif (${TYPE} STREQUAL TCP)
     set(TRANSFER_CLIENT src/transfer/TransferClient.h src/transfer/tcp/TransferClient.h src/transfer/tcp/TransferClient.cpp ${SOCKET})
 endif ()
 
-set(STRINGS src/session/strings.h)
 
-set(SESSION src/session/Session.cpp src/session/Session.h ${CRYPTO} ${BASE64} ${JSON} ${STRINGS})
+set(JSON lib/json/src/json.hpp)
+set(BASE64 lib/base64/base64.cpp lib/base64/base64.h)
+set(STRINGS src/session/strings.h)
+set(SESSION src/session/Session.cpp src/session/Session.h ${BASE64} ${JSON} ${STRINGS})
 set(SESSION_SERVER src/session/config.h src/session/SessionServer.cpp src/session/SessionServer.h ${TRANSFER_SERVER} ${SESSION})
 set(SESSION_CLIENT src/session/config.h src/session/SessionClient.cpp src/session/SessionClient.h ${TRANSFER_CLIENT} ${SESSION})
 
@@ -68,11 +63,11 @@ add_executable(client src/config.h src/client.cpp ${SOCKET} ${CLIENT} ${CLIENT_C
 add_executable(init src/config.h src/init.cpp ${DATABASE})
 
 if (WIN32)
-    target_link_libraries(server ws2_32 wsock32 crypto SQLiteCpp sqlite3)
-    target_link_libraries(client ws2_32 wsock32 crypto)
+    target_link_libraries(server ws2_32 wsock32 SQLiteCpp sqlite3)
+    target_link_libraries(client ws2_32 wsock32)
     target_link_libraries(init SQLiteCpp sqlite3)
 else ()
-    target_link_libraries(server pthread crypto dl SQLiteCpp sqlite3)
-    target_link_libraries(client pthread crypto)
+    target_link_libraries(server pthread dl SQLiteCpp sqlite3)
+    target_link_libraries(client pthread)
     target_link_libraries(init pthread dl SQLiteCpp sqlite3)
 endif ()

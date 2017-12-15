@@ -3,7 +3,7 @@
 
 int main() {
 #ifdef _WIN32
-    WinTCPSocket::startup();
+    Socket::startup();
 #endif
     auto &&address = Socket::make_address(address::SERVER_HOST, address::SERVER_PORT);
     auto &&socket = std::make_shared<Socket>();
@@ -12,6 +12,6 @@ int main() {
     client.start();
     client.join();
 #ifdef _WIN32
-    WinTCPSocket::cleanup();
+    Socket::cleanup();
 #endif
 }
