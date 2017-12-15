@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -8,9 +7,24 @@
 #include <stdexcept>
 #include <iomanip>
 #include <queue>
-#include "../Socket.h"
+#include <memory>
 
-class LinuxTCPSocket : public Socket {
+using socket_t = int;
+using address_t = sockaddr_in;
+
+class LinuxSocket {
+public:
+    class error : public std::runtime_error {
+    public:
+        using std::runtime_error::runtime_error;
+
+        ~error() override = default;
+    };
+
+public:
+    const static size_t BUFFER_SIZE = 512;
+    const static std::string DELIMITER;
+
 private:
     const socket_t descriptor;
     std::string buffer;
@@ -18,41 +32,41 @@ private:
     std::shared_ptr<address_t> address;
 
 public:
-    LinuxTCPSocket();
+    LinuxSocket();
 
-    explicit LinuxTCPSocket(socket_t descriptor);
+    explicit LinuxSocket(socket_t descriptor);
 
-    ~LinuxTCPSocket();
+    ~LinuxSocket();
 
-    socket_t get_descriptor() override;
+    socket_t get_descriptor();
 
-    bool select(timeval *timeout) override;
+    bool select(timeval *timeout);
 
-    std::shared_ptr<address_t> get_address() const override;
+    std::shared_ptr<address_t> get_address() const;
 
-    std::shared_ptr<Socket> accept() override;
+    std::shared_ptr<LinuxSocket> accept();
 
-    void bind(const address_t &address) override;
+    void bind(const address_t &address);
 
-    void set_options(int option) override;
+    void set_options(int option);
 
-    void listen(int backlog) override;
+    void listen(int backlog);
 
-    void connect(const address_t &address) override;
+    void connect(const address_t &address);
 
-    void send(const char *message) override;
+    void send(const char *message);
 
-    void send(std::string message) override;
+    void send(std::string message);
 
-    std::string receive() override;
+    std::string receive();
 
-    void close() override;
+    void close();
 
-    void shutdown() override;
+    void shutdown();
 
-    bool empty() override;
+    bool empty();
 
-    void update(Event event) override;
+    void update();
 
 public:
     static address_t make_address(const std::string &host, uint16_t port);
@@ -61,6 +75,19 @@ public:
 
     static address_t make_address(uint16_t port);
 
+    static std::ostream &write(std::ostream &stream, std::shared_ptr<address_t> address);
+
+    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket) {
+        auto &&address = socket->get_address();
+        return write(stream, address);
+    }
+
 private:
     size_t receive(char *message, int flags);
 };
+
+static std::ostream &operator<<(std::ostream &stream, address_t address) {
+    auto &&host = inet_ntoa(address.sin_addr);
+    auto &&port = address.sin_port;
+    return stream << host << ":" << port;
+}

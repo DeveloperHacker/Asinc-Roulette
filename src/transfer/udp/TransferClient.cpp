@@ -21,15 +21,17 @@ bool TransferClient::start() {
     stop_requests = false;
     input_thread = std::thread([this] {
         this->loop([this] {
-            timeval timeout{0, TransferServer::TIMEOUT_USEC};
+            timeval timeout{0, TransferServer::TIMEOUT_MSEC * 1000};
             if (socket->select(&timeout)) {
-                socket->update(Socket::Event::DATA_IN);
+                auto update_data = socket->update();
+                auto data = std::get<0>(update_data);
+                socket->update(data);
                 while (!socket->empty()) {
                     auto &&message = socket->receive();
                     input(message);
                 }
             } else {
-                socket->update(Socket::Event::TIMEOUT);
+                socket->update(TransferServer::TIMEOUT_MSEC);
             }
         });
         if (output_thread.joinable())
@@ -54,7 +56,6 @@ void TransferClient::stop() {
     std::unique_lock<std::mutex> lock(mutex);
     if (!stop_requests) {
         stop_requests = true;
-        socket->shutdown();
         socket->close();
     }
 }

@@ -148,17 +148,17 @@ address_t address(int domain, int type, int protocol, const char *host, const ch
     return address_info;
 }
 
-address_t WinSocket::address(int domain, int type, int protocol, const std::string &host, uint16_t port) {
-    return address(domain, type, protocol, host.c_str(), port);
+address_t WinSocket::make_address(const std::string &host, uint16_t port) {
+    return make_address(host.c_str(), port);
 }
 
-address_t WinSocket::address(int domain, int type, int protocol, const char *host, uint16_t port) {
+address_t WinSocket::make_address(const char *host, uint16_t port) {
     auto &&win_port = std::to_string((int) port).c_str();
-    return ::address(domain, type, protocol, host, win_port);
+    return ::address(AF_INET, SOCK_STREAM, IPPROTO_TCP, host, win_port);
 }
 
-address_t WinSocket::address(int domain, int type, int protocol, uint16_t port) {
-    return address(domain, type, protocol, INADDR_ANY, port);
+address_t WinSocket::make_address(uint16_t port) {
+    return make_address(INADDR_ANY, port);
 }
 
 std::ostream &operator<<(std::ostream &stream, const WinSocket &socket) {

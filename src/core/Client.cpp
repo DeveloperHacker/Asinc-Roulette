@@ -4,8 +4,8 @@
 using json = nlohmann::json;
 
 Client::Client(std::shared_ptr<Socket> socket) : SessionClient(socket), permission(permissions::GUEST),
-    handlers(std::make_shared<ClientHandlers>()),
-    commands(std::make_shared<ClientCommands>()) {
+                                                 handlers(std::make_shared<ClientHandlers>()),
+                                                 commands(std::make_shared<ClientCommands>()) {
     commands->init(*this);
 }
 

@@ -58,7 +58,7 @@ public:
     void bets();
 
     void bet(const std::string &type, int number, int value);
-    
+
     void kick(const std::string &login);
 
 private:

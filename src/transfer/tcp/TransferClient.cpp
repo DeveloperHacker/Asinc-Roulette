@@ -23,13 +23,11 @@ bool TransferClient::start() {
         this->loop([this] {
             timeval timeout{0, TransferServer::TIMEOUT_USEC};
             if (socket->select(&timeout)) {
-                socket->update(Socket::Event::DATA_IN);
+                socket->update();
                 while (!socket->empty()) {
                     auto &&message = socket->receive();
                     input(message);
                 }
-            } else {
-                socket->update(Socket::Event::TIMEOUT);
             }
         });
         if (output_thread.joinable())

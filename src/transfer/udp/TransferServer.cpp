@@ -3,8 +3,8 @@
 #include <unordered_map>
 #include <iomanip>
 #include <set>
-#include "../tcp/Socket.h"
-#include "TransferUDPServer.h"
+#include "../udp/Socket.h"
+#include "TransferServer.h"
 #include <sys/epoll.h>
 
 
@@ -24,13 +24,12 @@ bool TransferServer::start() {
 
 void task(
         std::shared_ptr<Connection> &connection,
-        const std::function<bool(id_t, const std::string &)> &handle
+        const std::function<bool(identifier_t, const std::string &)> &handle
 ) {
     bool close = false;
     auto &&id = connection->id;
     auto &&socket = connection->socket;
     try {
-        socket->update(Socket::Event::DATA_IN);
         while (!close && !socket->empty()) {
             auto &&message = socket->receive();
             close = handle(id, message);
@@ -45,8 +44,6 @@ void task(
     std::unique_lock<std::mutex> socket_lock(connection->mutex);
     connection->close = close;
     connection->free = true;
-    if (connection->close)
-        socket->shutdown();
 }
 
 void TransferServer::disconnect_connections() {
@@ -81,25 +78,12 @@ void add_descriptor(int epoll_descriptor, socket_t descriptor) {
         throw TransferServer::error("descriptor addition failed");
 }
 
-void TransferServer::handle_new_connection(int epoll_descriptor, id_t &max_id) {
-    auto &&client = socket->accept();
-    std::unique_lock<std::mutex> lock(mutex);
-    auto &&id = max_id++;
-    auto &&address = client->get_address();
-    auto &&descriptor = client->get_descriptor();
-    auto &&connection_ptr = std::make_shared<Connection>(id, client);
-    connections[id] = connection_ptr;
-    descriptors[descriptor] = id;
-    add_descriptor(epoll_descriptor, descriptor);
-    connect_handle(id);
-}
-
 void TransferServer::handle_connection(std::shared_ptr<Connection> connection, ThreadPool &pool) {
     std::unique_lock<std::mutex> socket_lock(connection->mutex);
     auto &&socket = connection->socket;
     if (!connection->free) return;
     connection->free = false;
-    auto &&handle = [this](id_t id, const std::string &message) -> bool {
+    auto &&handle = [this](identifier_t id, const std::string &message) -> bool {
         this->handle(id, message);
     };
     pool.enqueue(task, connection, handle);
@@ -107,47 +91,44 @@ void TransferServer::handle_connection(std::shared_ptr<Connection> connection, T
 
 void TransferServer::run() {
     ThreadPool pool(NUM_THREADS);
-    id_t max_id = 0;
+    identifier_t max_id = 0;
     int epoll_descriptor = epoll_create(1);
     if (epoll_descriptor == -1)
         throw TransferServer::error("creation of epoll descriptor is impossible");
     add_descriptor(epoll_descriptor, socket->get_descriptor());
     epoll_event events[10];
     while (!stop_requests) {
-        auto &&event_cnt = epoll_wait(epoll_descriptor, events, sizeof(events), TIMEOUT_USEC);
-        for (auto &&entry: connections) {
-            auto &&connection = entry.second;
-            connection->socket->update(Socket::TIMEOUT);
-        }
+        auto &&event_cnt = epoll_wait(epoll_descriptor, events, sizeof(events), TIMEOUT_MSEC);
         for (auto &&i = 0; i < event_cnt; ++i) {
             auto &&event = events[i];
-            auto &&descriptor = (socket_t) event.data.fd;
             if (event.events & EPOLLERR) {
-                remove_descriptor(epoll_descriptor, event);
-                auto &&connection = connection_by_descriptor(descriptor);
-                connection->close = true;
-                auto &&id = connection->id;
-                auto &&socket = connection->socket;
-                std::cerr << TransferServer::format(id, socket) << " epoll error" << std::endl;
-            }
-            if (event.events & EPOLLHUP) {
-                remove_descriptor(epoll_descriptor, event);
-                auto &&connection = connection_by_descriptor(descriptor);
-                connection->close = true;
+                std::cerr << TransferServer::format(0, socket) << " epoll error" << std::endl;
             }
             if (event.events & EPOLLIN) {
-                if (descriptor == socket->get_descriptor())
-                    handle_new_connection(epoll_descriptor, max_id);
-                else {
-                    auto &&connection = connection_by_descriptor(descriptor);
-                    handle_connection(connection, pool);
+                auto &&result = socket->update();
+                auto message = std::get<0>(result);
+                auto address = std::get<1>(result);
+                identifier_t id = Socket::concat(address);
+                auto &&entry = connections.find(id);
+                if (entry == std::end(connections)) {
+                    auto &&client = socket->accept(address);
+                    connections.emplace(id, std::make_shared<Connection>(id, client));
+                    connect_handle(id);
                 }
+                auto &&connection = connections[id];
+                connection->socket->update(message);
+                if (!connection->socket->empty())
+                    handle_connection(connection, pool);
             }
+        }
+        for (auto &&entry: connections) {
+            auto &&connection = entry.second;
+            if (connection->socket->update(TIMEOUT_MSEC))
+                connection->close = true;
         }
         disconnect_unavailable_connections();
     }
     disconnect_connections();
-    socket->close();
 }
 
 void TransferServer::join() {
@@ -163,9 +144,9 @@ bool TransferServer::stopped() {
     return stop_requests;
 }
 
-std::unordered_map<id_t, std::shared_ptr<address_t>> TransferServer::get_connections() {
+std::unordered_map<identifier_t, std::shared_ptr<address_t>> TransferServer::get_connections() {
     std::unique_lock<std::mutex> lock(mutex);
-    std::unordered_map<id_t, std::shared_ptr<address_t>> view;
+    std::unordered_map<identifier_t, std::shared_ptr<address_t>> view;
     for (auto &&entry: connections) {
         auto &&id = entry.first;
         auto &&connection = entry.second;
@@ -175,39 +156,26 @@ std::unordered_map<id_t, std::shared_ptr<address_t>> TransferServer::get_connect
     return view;
 }
 
-void TransferServer::kill(id_t id) {
+void TransferServer::kill(identifier_t id) {
     std::unique_lock<std::mutex> lock(mutex);
     auto &&it = connections.find(id);
     unsafe_kill(it);
 }
 
-std::shared_ptr<Connection> TransferServer::connection_by_descriptor(socket_t descriptor) {
-    std::unique_lock<std::mutex> lock(mutex);
-    auto &&desc_entry = descriptors.find(descriptor);
-    if (desc_entry == std::end(descriptors))
-        throw TransferServer::error("connection hasn't found");
-    auto &&id = desc_entry->second;
-    auto &&conn_entry = connections.find(id);
-    if (conn_entry == std::end(connections))
-        throw TransferServer::error("connection hasn't found");
-    auto &&connection = conn_entry->second;
-    return connection;
-}
-
 connections_iterator TransferServer::unsafe_kill(connections_iterator it) {
-    if (it == std::end(connections))
-        return it;
-    auto &&id = it->first;
-    auto &&connection = it->second;
-    auto &&socket = connection->socket;
-    socket->shutdown();
-    socket->close();
-    it = connections.erase(it);
-    disconnect_handle(id);
+    try {
+        if (it == std::end(connections))
+            return it;
+        auto &&id = it->first;
+        auto &&connection = it->second;
+        connection->socket->close();
+        it = connections.erase(it);
+        disconnect_handle(id);
+    } catch (Socket::error &ignore) {}
     return it;
 }
 
-std::string TransferServer::format(id_t id, std::shared_ptr<Socket> socket) {
+std::string TransferServer::format(identifier_t id, std::shared_ptr<Socket> socket) {
     std::stringstream stream;
     stream << "[" << id << " " << socket << "]";
     return stream.str();
@@ -227,23 +195,23 @@ void TransferServer::broadcast(const std::string &message) {
     }
 }
 
-void TransferServer::send(const std::vector<id_t> &ids, const char *message) {
+void TransferServer::send(const std::vector<identifier_t> &ids, const char *message) {
     std::string m(message);
     send(ids, m);
 }
 
-void TransferServer::send(const std::vector<id_t> &ids, const std::string &message) {
+void TransferServer::send(const std::vector<identifier_t> &ids, const std::string &message) {
     for (auto &&id: ids) {
         send(id, message);
     }
 }
 
-void TransferServer::send(id_t id, const char *message) {
+void TransferServer::send(identifier_t id, const char *message) {
     std::string m(message);
     send(id, m);
 }
 
-void TransferServer::send(id_t id, const std::string &message) {
+void TransferServer::send(identifier_t id, const std::string &message) {
     std::unique_lock<std::mutex> lock(mutex);
     auto &&entry = connections.find(id);
     if (entry == std::end(connections))

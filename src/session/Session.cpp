@@ -197,20 +197,20 @@ std::vector<unsigned char> Session::slave_init(const std::vector<unsigned char> 
 }
 
 std::string Session::unpack(const std::string &message) {
-    if (message.find(crypto::EMPTY_MESSAGE_PREFIX) != std::string::npos) {
+    if (message.find(crypto::EMPTY_MESSAGE_PREFIX) == 0) {
         return strings::drop(message, crypto::EMPTY_MESSAGE_PREFIX.size());
     }
-    if (message.find(crypto::NORMAL_MESSAGE_PREFIX) != std::string::npos) {
+    if (message.find(crypto::NORMAL_MESSAGE_PREFIX) == 0) {
         return strings::drop(message, crypto::NORMAL_MESSAGE_PREFIX.size());
     }
     throw Session::error("undefined message correction " + message);
 }
 
 std::string Session::unpack_and_decrypt_if_needed(Session &session, const std::string &message) {
-    if (message.find(crypto::RAW_MESSAGE_PREFIX) != std::string::npos) {
+    if (message.find(crypto::RAW_MESSAGE_PREFIX) == 0) {
         return strings::drop(message, crypto::RAW_MESSAGE_PREFIX.size());
     }
-    if (message.find(crypto::ENCRYPTED_MESSAGE_PREFIX) != std::string::npos) {
+    if (message.find(crypto::ENCRYPTED_MESSAGE_PREFIX) == 0) {
         auto &&encrypted = strings::drop(message, crypto::ENCRYPTED_MESSAGE_PREFIX.size());
         return unpack(session.decrypt(encrypted));
     }

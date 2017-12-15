@@ -12,11 +12,11 @@ public:
     Server(int domain, int type, int protocol, address_t &address);
 
 protected:
-    bool crypto_handle(id_t id, address_t address, const std::string &message) override;
+    bool crypto_handle(identifier_t id, address_t address, const std::string &message) override;
 
-    bool handle(id_t id, address_t address, const std::string &message) override;
+    bool handle(identifier_t id, address_t address, const std::string &message) override;
 
-    void connect_handle(id_t id, address_t address) override;
+    void connect_handle(identifier_t id, address_t address) override;
 
-    void disconnect_handle(id_t id, address_t address) override;
+    void disconnect_handle(identifier_t id, address_t address) override;
 };

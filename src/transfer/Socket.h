@@ -1,8 +1,9 @@
-//
-// Created by sergei on 12/8/17.
-//
+#pragma once
 
-#ifndef ASYNC_ROULETTE_SOCKET_H
-#define ASYNC_ROULETTE_SOCKET_H
-
-#endif //ASYNC_ROULETTE_SOCKET_H
+#ifdef TCP
+    #include "tcp/Socket.h"
+#elif UDP
+    #include "udp/Socket.h"
+#else
+    #error
+#endif

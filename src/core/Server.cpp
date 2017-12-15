@@ -4,19 +4,19 @@
 using json = nlohmann::json;
 
 Server::Server(std::shared_ptr<Socket> socket) : SessionServer(socket),
-    handlers(std::make_shared<ServerHandlers>()),
-    data_base(other::DATA_BASE) {
+                                                 handlers(std::make_shared<ServerHandlers>()),
+                                                 data_base(other::DATA_BASE) {
     std::srand(std::time(nullptr));
 }
 
-void Server::handle_error(id_t id, const std::string &command, const std::string &message) {
+void Server::handle_error(identifier_t id, const std::string &command, const std::string &message) {
     std::cerr << "[DEBUG] ERROR " << message << std::endl;
     send(id, stats::STATUS_ERROR, command, {
             {parts::MESSAGE, message}
     });
 }
 
-bool Server::session_handle(id_t id, const std::string &message) {
+bool Server::session_handle(identifier_t id, const std::string &message) {
     auto &&request = json::parse(message);
     std::string command = request[parts::COMMAND];
     auto &&data = request[parts::DATA];
@@ -35,18 +35,18 @@ bool Server::session_handle(id_t id, const std::string &message) {
     }
 }
 
-void Server::connect_handle(id_t id) {
+void Server::connect_handle(identifier_t id) {
     SessionServer::connect_handle(id);
     auto &&user = data_base.get_user(other::GUEST);
     add_user(id, user);
 }
 
-void Server::disconnect_handle(id_t id) {
+void Server::disconnect_handle(identifier_t id) {
     SessionServer::disconnect_handle(id);
     do_disconnect(id);
 }
 
-void Server::do_signin(id_t id, const std::string &login, const std::string &password) {
+void Server::do_signin(identifier_t id, const std::string &login, const std::string &password) {
     if (login2id.count(login) != 0)
         throw Server::error("user with login " + login + " already logged in");
     auto &&user = data_base.get_user(login);
@@ -58,7 +58,7 @@ void Server::do_signin(id_t id, const std::string &login, const std::string &pas
     });
 }
 
-void Server::do_signout(id_t id) {
+void Server::do_signout(identifier_t id) {
     auto &&user = data_base.get_user(other::GUEST);
     add_user(id, user);
     send(id, stats::STATUS_SUCCESS, commands::SINGOUT, {
@@ -66,21 +66,21 @@ void Server::do_signout(id_t id) {
     });
 }
 
-void Server::do_join(id_t id, const std::string &name, const std::string &password) {
+void Server::do_join(identifier_t id, const std::string &name, const std::string &password) {
     add_player(id, name, password);
     send(id, stats::STATUS_SUCCESS, commands::JOIN, {
             {parts::PERMITION, permissions::PLAYER}
     });
 }
 
-void Server::do_create(id_t id, const std::string &name, const std::string &password) {
+void Server::do_create(identifier_t id, const std::string &name, const std::string &password) {
     add_croupier(id, name, password);
     send(id, stats::STATUS_SUCCESS, commands::CREATE, {
             {parts::PERMITION, permissions::CROUPIER}
     });
 }
 
-void Server::do_leave(id_t id) {
+void Server::do_leave(identifier_t id) {
     auto &&permission = get_permission(id);
     if (permission & permissions::CROUPIER)
         leave_croupier(id);
@@ -88,7 +88,7 @@ void Server::do_leave(id_t id) {
         leave_player(id);
 }
 
-void Server::do_write(id_t id, const std::string &message) {
+void Server::do_write(identifier_t id, const std::string &message) {
     auto &&session = get_session(id);
     for (auto &&login : session.users) {
         auto &&dest_id = get_id(login);
@@ -97,7 +97,7 @@ void Server::do_write(id_t id, const std::string &message) {
     }
 }
 
-void Server::do_write(id_t id, const std::string &login, const std::string &message) {
+void Server::do_write(identifier_t id, const std::string &login, const std::string &message) {
     auto &&session = get_session(id);
     if (session.users.count(login) == 0)
         throw Server::error("user with login " + login + " hasn't found");
@@ -107,7 +107,7 @@ void Server::do_write(id_t id, const std::string &login, const std::string &mess
     });
 }
 
-void Server::do_tables(id_t id) {
+void Server::do_tables(identifier_t id) {
     json list = {};
     for (auto &&entry : sessions) {
         auto &&session = entry.second;
@@ -123,7 +123,7 @@ void Server::do_tables(id_t id) {
     });
 }
 
-void Server::do_users(id_t id) {
+void Server::do_users(identifier_t id) {
     auto &&session = get_session(id);
     json list = {};
     for (auto &&login : session.users) {
@@ -140,7 +140,7 @@ void Server::do_users(id_t id) {
     });
 }
 
-void Server::do_disconnect(id_t id) {
+void Server::do_disconnect(identifier_t id) {
     auto &&login = get_login(id);
     auto &&permission = get_permission(id);
     if (permission & permissions::CROUPIER)
@@ -150,19 +150,19 @@ void Server::do_disconnect(id_t id) {
     remove_user(id);
 }
 
-void Server::do_sync(id_t id) {
+void Server::do_sync(identifier_t id) {
     auto &&permission = get_permission(id);
     send(id, stats::STATUS_SUCCESS, commands::SYNC, {
             {parts::PERMITION, permission}
     });
 }
 
-void Server::do_signup(id_t id, const std::string &login, const std::string &password) {
+void Server::do_signup(identifier_t id, const std::string &login, const std::string &password) {
     data_base.new_user(login, password, permissions::USER);
     send(id, stats::STATUS_SUCCESS, commands::SINGUP, {});
 }
 
-void Server::do_set_permission(id_t id, const std::string &login, permission_t permission) {
+void Server::do_set_permission(identifier_t id, const std::string &login, permission_t permission) {
     data_base.set_user_permission(login, permission);
     auto &&user_online = login2id.count(login) > 0;
     if (user_online) {
@@ -173,17 +173,17 @@ void Server::do_set_permission(id_t id, const std::string &login, permission_t p
     send(id, stats::STATUS_SUCCESS, commands::SET_PERMISSION, {});
 }
 
-std::string Server::get_login(id_t id) {
+std::string Server::get_login(identifier_t id) {
     auto &&user = get_user(id);
     return user.login;
 }
 
-permission_t Server::get_permission(id_t id) {
+permission_t Server::get_permission(identifier_t id) {
     auto &&user = get_user(id);
     return user.permission;
 }
 
-void Server::leave_croupier(id_t id) {
+void Server::leave_croupier(identifier_t id) {
     auto &&session = get_session(id);
     for (auto &&login : std::unordered_set<std::string>(session.users)) {
         if (login == session.croupier) continue;
@@ -198,7 +198,7 @@ void Server::leave_croupier(id_t id) {
     });
 }
 
-void Server::leave_player(id_t id) {
+void Server::leave_player(identifier_t id) {
     auto &&session = get_session(id);
     auto &&login = get_login(id);
     if (session.croupier == login)
@@ -212,14 +212,14 @@ void Server::leave_player(id_t id) {
     });
 }
 
-std::string Server::get_session_name(id_t id) {
+std::string Server::get_session_name(identifier_t id) {
     auto &&entry = id2name.find(id);
     if (entry == std::end(id2name))
         throw Server::error("session hasn't found");
     return entry->second;
 }
 
-Server::session_t &Server::get_session(id_t id) {
+Server::session_t &Server::get_session(identifier_t id) {
     std::string name = get_session_name(id);
     auto &&entry = sessions.find(name);
     if (entry == std::end(sessions))
@@ -227,7 +227,7 @@ Server::session_t &Server::get_session(id_t id) {
     return entry->second;
 }
 
-void Server::add_player(id_t id, const std::string &name, const std::string &password) {
+void Server::add_player(identifier_t id, const std::string &name, const std::string &password) {
     auto &&entry = sessions.find(name);
     if (entry == std::end(sessions))
         throw Server::error("table with name " + name + " hasn't found");
@@ -242,7 +242,7 @@ void Server::add_player(id_t id, const std::string &name, const std::string &pas
     local_set_user_permission(id, permissions::PLAYER);
 }
 
-void Server::add_croupier(id_t id, const std::string &name, const std::string &password) {
+void Server::add_croupier(identifier_t id, const std::string &name, const std::string &password) {
     auto &&entry = sessions.find(name);
     if (entry != std::end(sessions))
         throw Server::error("table with name " + name + " already exist");
@@ -254,40 +254,40 @@ void Server::add_croupier(id_t id, const std::string &name, const std::string &p
     local_set_user_permission(id, permissions::CROUPIER);
 }
 
-void Server::add_user(id_t id, const DataBase::user_t &user) {
+void Server::add_user(identifier_t id, const DataBase::user_t &user) {
     auto &&login = user.login;
     login2id[login] = id;
     users[id] = user;
 }
 
-void Server::remove_user(id_t id) {
+void Server::remove_user(identifier_t id) {
     auto &&login = get_login(id);
     login2id.erase(login);
     users.erase(id);
 }
 
-DataBase::user_t &Server::get_user(id_t id) {
+DataBase::user_t &Server::get_user(identifier_t id) {
     auto &&entry = users.find(id);
     if (entry == std::end(users))
         throw Server::error("connection hasn't found");
     return entry->second;
 }
 
-void Server::local_set_user_permission(id_t id, permission_t permission) {
+void Server::local_set_user_permission(identifier_t id, permission_t permission) {
     auto &&user = get_user(id);
     user.permission = permission;
     add_user(id, user);
 }
 
 
-id_t Server::get_id(const std::string &login) {
+identifier_t Server::get_id(const std::string &login) {
     auto &&entry = login2id.find(login);
     if (entry == std::end(login2id))
         throw Server::error("user with id hasn't found");
     return entry->second;
 }
 
-void Server::send(id_t id, const std::string &status, const std::string &command, const json &data) {
+void Server::send(identifier_t id, const std::string &status, const std::string &command, const json &data) {
     json response;
     response[parts::STATUS] = status;
     response[parts::COMMAND] = command;
@@ -295,14 +295,14 @@ void Server::send(id_t id, const std::string &status, const std::string &command
     send(id, response.dump());
 }
 
-void Server::do_balance(id_t id) {
+void Server::do_balance(identifier_t id) {
     auto &&user = get_user(id);
     send(id, stats::STATUS_SUCCESS, commands::BALANCE, {
             {parts::BALANCE, user.balance}
     });
 }
 
-void Server::do_bet(id_t id, const bet_t &bet) {
+void Server::do_bet(identifier_t id, const bet_t &bet) {
     validate(bet);
     auto &&session = get_session(id);
     auto &&user = get_user(id);
@@ -321,24 +321,24 @@ void Server::do_bet(id_t id, const bet_t &bet) {
     send(id, stats::STATUS_SUCCESS, commands::BET, {});
 }
 
-void Server::do_bets(id_t id) {
+void Server::do_bets(identifier_t id) {
     auto &&session = get_session(id);
     json data;
     for (auto &&entry : session.bets) {
         auto &&login = entry.first;
         for (auto &&bet : entry.second) {
             data.push_back({
-                {parts::LOGIN,  login},
-                {parts::TYPE,   bet.type},
-                {parts::NUMBER, bet.number},
-                {parts::VALUE,  bet.value}
-            });
+                                   {parts::LOGIN,  login},
+                                   {parts::TYPE,   bet.type},
+                                   {parts::NUMBER, bet.number},
+                                   {parts::VALUE,  bet.value}
+                           });
         }
     }
     send(id, stats::STATUS_SUCCESS, commands::BETS, data);
 }
 
-void Server::do_spin(id_t id) {
+void Server::do_spin(identifier_t id) {
     auto &&session = get_session(id);
     auto &&random_number = std::rand() % bets::MAX_NUMBER;
     for (auto &&login: session.users) {
@@ -359,13 +359,13 @@ void Server::do_spin(id_t id) {
     session.bets.clear();
 }
 
-void Server::do_kick(id_t id, const std::string &login) {
+void Server::do_kick(identifier_t id, const std::string &login) {
     auto &&user_id = get_id(login);
     leave_player(user_id);
     send(id, stats::STATUS_SUCCESS, commands::KICK, {});
 }
 
-void Server::pay(id_t id, const bet_t &bet, bool is_positive) {
+void Server::pay(identifier_t id, const bet_t &bet, bool is_positive) {
     money_t value;
     if (is_positive) {
         auto &&multiplier = bets::multipliers.find(bet.type)->second;

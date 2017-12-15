@@ -4,11 +4,10 @@
 #include "transfer/Socket.h"
 #include "core/Server.h"
 #include "commands/ServerCommands.h"
-#include "transfer/LinuxTCPSocket.h"
 
 int main() {
-    auto &&address = LinuxTCPSocket::make_address(address::SERVER_PORT);
-    auto &&socket = std::make_shared<LinuxTCPSocket>(AF_INET, SOCK_STREAM, 0);
+    auto &&address = Socket::make_address(address::SERVER_PORT);
+    auto &&socket = std::make_shared<Socket>();
     socket->bind(address);
     socket->set_options(SO_REUSEADDR);
     socket->listen(1);

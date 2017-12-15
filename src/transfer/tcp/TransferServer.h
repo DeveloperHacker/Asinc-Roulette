@@ -7,11 +7,11 @@
 #include <mutex>
 #include <utility>
 
-using id_t = uint64_t;
+using identifier_t = uint64_t;
 
 class Connection {
 public:
-    const id_t id;
+    const identifier_t id;
 
     const std::shared_ptr<Socket> socket;
 
@@ -21,11 +21,11 @@ public:
 
     std::mutex mutex;
 
-    Connection(id_t id, std::shared_ptr<Socket> socket) : // NOLINT
+    Connection(identifier_t id, std::shared_ptr<Socket> socket) : // NOLINT
             id(id), socket(socket), free(true), close(false) {}
 };
 
-using connections_iterator = std::unordered_map<id_t, std::shared_ptr<Connection>>::const_iterator;
+using connections_iterator = std::unordered_map<identifier_t, std::shared_ptr<Connection>>::const_iterator;
 
 class TransferServer {
 public:
@@ -47,9 +47,9 @@ private:
 
     bool stop_requests;
 
-    std::unordered_map<socket_t, id_t> descriptors;
+    std::unordered_map<socket_t, identifier_t> descriptors;
 
-    std::unordered_map<id_t, std::shared_ptr<Connection>> connections;
+    std::unordered_map<identifier_t, std::shared_ptr<Connection>> connections;
 
     std::mutex mutex;
 
@@ -66,28 +66,28 @@ public:
 
     bool stopped();
 
-    std::unordered_map<id_t, std::shared_ptr<address_t>> get_connections();
+    std::unordered_map<identifier_t, std::shared_ptr<address_t>> get_connections();
 
-    void kill(id_t id);
+    void kill(identifier_t id);
 
     virtual void broadcast(const char *message);
 
     virtual void broadcast(const std::string &message);
 
-    virtual void send(id_t id, const char *message);
+    virtual void send(identifier_t id, const char *message);
 
-    virtual void send(id_t id, const std::string &message);
+    virtual void send(identifier_t id, const std::string &message);
 
-    virtual void send(const std::vector<id_t> &ids, const char *message); // NOLINT
+    virtual void send(const std::vector<identifier_t> &ids, const char *message); // NOLINT
 
-    virtual void send(const std::vector<id_t> &ids, const std::string &message); // NOLINT
+    virtual void send(const std::vector<identifier_t> &ids, const std::string &message); // NOLINT
 
 protected:
-    virtual bool handle(id_t id, const std::string &message) = 0;
+    virtual bool handle(identifier_t id, const std::string &message) = 0;
 
-    virtual void connect_handle(id_t id) = 0;
+    virtual void connect_handle(identifier_t id) = 0;
 
-    virtual void disconnect_handle(id_t id) = 0;
+    virtual void disconnect_handle(identifier_t id) = 0;
 
 private:
     void run();
@@ -96,7 +96,7 @@ private:
 
     void disconnect_unavailable_connections();
 
-    void handle_new_connection(int epoll_descriptor, id_t &max_id);
+    void handle_new_connection(int epoll_descriptor, identifier_t &max_id);
 
     void handle_connection(std::shared_ptr<Connection> connection, ThreadPool &pool);
 
@@ -105,5 +105,5 @@ private:
     connections_iterator unsafe_kill(connections_iterator it);
 
 public:
-    static std::string format(id_t id, std::shared_ptr<Socket> socket);
+    static std::string format(identifier_t id, std::shared_ptr<Socket> socket);
 };

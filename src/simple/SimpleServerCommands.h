@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../commands/Commands.h"
+#include "../transfer/Socket.h"
 #include "../transfer/TransferServer.h"
 
 class SimpleServerCommands : public Commands {
@@ -37,7 +38,7 @@ public:
             for (auto &&argument : arguments) {
                 int id;
                 if (strings::str2int(id, argument) && id >= 0) {
-                    server.kill(static_cast<id_t>(id));
+                    server.kill(static_cast<identifier_t>(id));
                 } else if (argument == "--all" || argument == "-a") {
                     auto &&connections = server.get_connections();
                     for (auto &&connection: connections) {
@@ -61,12 +62,12 @@ public:
                 return true;
             }
             std::cout << " "
-                      << std::setw(5) << std::left << "id"
+                      << std::setw(15) << std::left << "id"
                       << "address" << std::endl;
             for (auto &&connection: connections) {
                 auto &&id = connection.first;
                 auto &&address = connection.second;
-                std::cout << " " << std::setw(5) << std::left << id;
+                std::cout << " " << std::setw(15) << std::left << id;
                 Socket::write(std::cout, address);
                 std::cout << std::endl;
             }
@@ -82,12 +83,12 @@ public:
                 server.broadcast(message);
                 return true;
             }
-            std::vector<id_t> ids;
+            std::vector<identifier_t> ids;
             for (int i = 0; i < arguments.size() - 1; ++i) {
                 auto &&argument = arguments[i];
                 int id;
                 if (strings::str2int(id, argument) && id >= 0) {
-                    ids.push_back(static_cast<id_t>(id));
+                    ids.push_back(static_cast<identifier_t>(id));
                 } else {
                     std::cerr << "send id " << argument << " hasn't recognized" << std::endl;
                 }

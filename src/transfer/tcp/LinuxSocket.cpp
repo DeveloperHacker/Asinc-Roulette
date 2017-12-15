@@ -1,39 +1,41 @@
-#include "LinuxTCPSocket.h"
+#include "LinuxSocket.h"
 #include <algorithm>
 #include <unistd.h>
 
-LinuxTCPSocket::LinuxTCPSocket() : descriptor(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) {}
+const std::string LinuxSocket::DELIMITER("\r\n");
 
-LinuxTCPSocket::LinuxTCPSocket(socket_t descriptor) : descriptor(descriptor) {}
+LinuxSocket::LinuxSocket() : descriptor(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) {}
 
-LinuxTCPSocket::~LinuxTCPSocket() = default;
+LinuxSocket::LinuxSocket(socket_t descriptor) : descriptor(descriptor) {}
 
-void LinuxTCPSocket::bind(const address_t &address) {
+LinuxSocket::~LinuxSocket() = default;
+
+void LinuxSocket::bind(const address_t &address) {
     auto success = ::bind(descriptor, reinterpret_cast<const sockaddr *>(&address), sizeof(address));
     if (success < 0)
         throw error("bind: address already used");
 }
 
-void LinuxTCPSocket::listen(int backlog) {
+void LinuxSocket::listen(int backlog) {
     auto success = ::listen(descriptor, backlog);
     if (success < 0)
         throw error("listen: error");
 }
 
-void LinuxTCPSocket::connect(const address_t &address) {
+void LinuxSocket::connect(const address_t &address) {
     auto success = ::connect(descriptor, reinterpret_cast<const sockaddr *>(&address), sizeof(address));
     if (success < 0)
         throw error("connect: connection hast'n exist");
 }
 
-size_t LinuxTCPSocket::receive(char *message, int flags) {
+size_t LinuxSocket::receive(char *message, int flags) {
     auto size = ::recv(descriptor, message, BUFFER_SIZE, flags);
     if (size <= 0)
         throw error("receive: connection refused");
     return static_cast<size_t>(size);
 }
 
-std::string LinuxTCPSocket::receive() {
+std::string LinuxSocket::receive() {
     if (received.empty())
         throw error("receive: socket is empty");
     auto message = received.front();
@@ -41,12 +43,12 @@ std::string LinuxTCPSocket::receive() {
     return message;
 }
 
-void LinuxTCPSocket::send(const char *message) {
+void LinuxSocket::send(const char *message) {
     std::string data(message);
     send(data);
 }
 
-void LinuxTCPSocket::send(std::string message) {
+void LinuxSocket::send(std::string message) {
     message.append(DELIMITER);
     for (unsigned left = 0; left < message.length(); left += BUFFER_SIZE) {
         auto right = std::min(left + BUFFER_SIZE, message.length());
@@ -57,32 +59,33 @@ void LinuxTCPSocket::send(std::string message) {
     }
 }
 
-void LinuxTCPSocket::close() {
+void LinuxSocket::close() {
     ::close(descriptor);
 }
 
-std::shared_ptr<Socket> LinuxTCPSocket::accept() {
+std::shared_ptr<LinuxSocket> LinuxSocket::accept() {
     auto socket = ::accept(descriptor, nullptr, nullptr);
     if (socket < 0)
         throw error("accept: error");
-    return std::make_shared<LinuxTCPSocket>(socket);
+    return std::make_shared<LinuxSocket>(socket);
 }
 
-std::shared_ptr<address_t> LinuxTCPSocket::get_address() const {
+std::shared_ptr<address_t> LinuxSocket::get_address() const {
     auto &&address = std::make_shared<address_t>();
     auto *flatten = reinterpret_cast<sockaddr *>(address.get());
     socklen_t address_len = sizeof(address);
     auto success = ::getsockname(descriptor, flatten, &address_len);
     if (success < 0)
         return this->address;
+    this->address = address;
     return address;
 }
 
-void LinuxTCPSocket::shutdown() {
+void LinuxSocket::shutdown() {
     ::shutdown(descriptor, SHUT_RDWR);
 }
 
-bool LinuxTCPSocket::select(timeval *timeout) {
+bool LinuxSocket::select(timeval *timeout) {
     fd_set view{};
     FD_ZERO(&view);
     FD_SET(descriptor, &view);
@@ -92,31 +95,29 @@ bool LinuxTCPSocket::select(timeval *timeout) {
     return static_cast<bool>(ready);
 }
 
-void LinuxTCPSocket::set_options(int option) {
+void LinuxSocket::set_options(int option) {
     int one = 1;
     ::setsockopt(descriptor, SOL_SOCKET, option, &one, sizeof(int));
 }
 
-void LinuxTCPSocket::update(Socket::Event event) {
-    if (event == DATA_IN) {
-        char data[BUFFER_SIZE];
-        auto length = receive(data, 0);
-        buffer.append(data, length);
-        auto index = buffer.find(DELIMITER);
-        while (index != std::string::npos) {
-            auto message = buffer.substr(0, index);
-            buffer = buffer.substr(index + DELIMITER.length());
-            received.push(message);
-            index = buffer.find(DELIMITER);
-        }
+void LinuxSocket::update() {
+    char data[BUFFER_SIZE];
+    auto length = receive(data, 0);
+    buffer.append(data, length);
+    auto index = buffer.find(DELIMITER);
+    while (index != std::string::npos) {
+        auto message = buffer.substr(0, index);
+        buffer = buffer.substr(index + DELIMITER.length());
+        received.push(message);
+        index = buffer.find(DELIMITER);
     }
 }
 
-address_t LinuxTCPSocket::make_address(const std::string &host, uint16_t port) {
+address_t LinuxSocket::make_address(const std::string &host, uint16_t port) {
     return make_address(host.c_str(), port);
 }
 
-address_t LinuxTCPSocket::make_address(const char *host, uint16_t port) {
+address_t LinuxSocket::make_address(const char *host, uint16_t port) {
     address_t address{};
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
@@ -124,7 +125,7 @@ address_t LinuxTCPSocket::make_address(const char *host, uint16_t port) {
     return address;
 }
 
-address_t LinuxTCPSocket::make_address(uint16_t port) {
+address_t LinuxSocket::make_address(uint16_t port) {
     address_t address{};
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
@@ -132,10 +133,17 @@ address_t LinuxTCPSocket::make_address(uint16_t port) {
     return address;
 }
 
-socket_t LinuxTCPSocket::get_descriptor() {
+socket_t LinuxSocket::get_descriptor() {
     return descriptor;
 }
 
-bool LinuxTCPSocket::empty() {
+bool LinuxSocket::empty() {
     return received.empty();
+}
+
+std::ostream &LinuxSocket::write(std::ostream &stream, std::shared_ptr<address_t> address) {
+    if (address == nullptr)
+        return stream << "<invalid-address>";
+    else
+        return stream << *address;
 }

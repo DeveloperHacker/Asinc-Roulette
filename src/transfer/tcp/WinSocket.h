@@ -70,11 +70,11 @@ public:
 
     static void cleanup();
 
-    static address_t address(int domain, int type, int protocol, const std::string &host, uint16_t port);
+    static address_t make_address(const std::string &host, uint16_t port);
 
-    static address_t address(int domain, int type, int protocol, const char *host, uint16_t port);
+    static address_t make_address(const char *host, uint16_t port);
 
-    static address_t address(int domain, int type, int protocol, uint16_t port);
+    static address_t make_address(uint16_t port);
 
     friend std::ostream &operator<<(std::ostream &stream, const WinSocket &socket);
 };
