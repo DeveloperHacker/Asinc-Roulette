@@ -13,7 +13,7 @@
 #include <queue>
 #include <memory>
 
-typedef addrinfo *address_t;
+typedef sockaddr address_t;
 typedef SOCKET socket_t;
 
 class WinSocket {
@@ -31,9 +31,12 @@ public:
     const static size_t BUFFER_SIZE = 512;
     const static size_t MAX_FRAGMENTATION_POWER = 256;
     const static size_t DISCONNECT_TIMEOUT = 60 * 1000;
+    const static size_t PING_TIMEOUT = 10 * 1000;
     const static size_t RETRY_TIMEOUT = 1000;
     const static std::string DELIMITER;
     const static char SUCCESS = 'S';
+    const static char PING = 'P';
+    const static char PONG = 'O';
     const static char USER = 'U';
     const static char EXIT = 'E';
 
@@ -42,9 +45,10 @@ private:
     std::string buffer;
     std::deque<std::vector<std::string>> send_buffer;
     std::queue<std::string> receive_buffer;
-    std::shared_ptr<address_t> address;
-    uint64_t disconnect_timeout;
-    uint64_t retry_timeout;
+    address_t address;
+    size_t disconnect_timeout;
+    size_t ping_timeout;
+    size_t retry_timeout;
     char package_id = 0;
     char expected_id = 0;
     char expected_number = 0;
@@ -61,7 +65,7 @@ public:
 
     bool select(timeval *timeout);
 
-    std::shared_ptr<address_t> get_address() const;
+    address_t get_address() const;
 
     std::shared_ptr<WinSocket> accept(address_t address);
 
@@ -75,7 +79,7 @@ public:
 
     void send(const char *message);
 
-    void send(std::string message);
+    void send(const std::string &message);
 
     std::string receive();
 
@@ -85,7 +89,7 @@ public:
 
     std::tuple<std::string, address_t> update();
 
-    bool update(size_t timeout);
+    bool update(size_t timeout_msec);
 
     bool update(const std::string &message);
 
@@ -102,25 +106,20 @@ public:
 
     static uint64_t concat(address_t address);
 
-    static std::ostream &write(std::ostream &stream, std::shared_ptr<address_t> address);
-
-    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<WinSocket> socket) {
-        auto &&address = socket->get_address();
-        return write(stream, address);
-    }
+    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<WinSocket> socket);
 
 private:
     void raw_send(char type);
-    
+
     void raw_send(const std::string &message);
-    
-    void buffered_send(std::string message);
+
+    void buffered_send(std::string &message);
 
     std::tuple<size_t, address_t> raw_receive(char *message, int flags);
 };
 
 static std::ostream &operator<<(std::ostream &stream, address_t address) {
-    auto addr = reinterpret_cast<sockaddr_in *>(address->ai_addr);
+    auto addr = reinterpret_cast<sockaddr_in *>(&address);
     auto &&host = inet_ntoa(addr->sin_addr);
     auto &&port = addr->sin_port;
     return stream << host << ":" << port;

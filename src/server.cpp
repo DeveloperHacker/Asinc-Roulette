@@ -1,12 +1,16 @@
 
 #include "commands/Command.h"
-#include "config.h"
+#include "Config.h"
 #include "transfer/Socket.h"
 #include "core/Server.h"
 #include "commands/ServerCommands.h"
 
 int main() {
-    auto &&address = Socket::make_address(address::SERVER_PORT);
+#ifdef _WIN32
+    Socket::startup();
+#endif
+    std::cout << "Server allowed from port " << Config::get_port() << std::endl;
+    auto &&address = Socket::make_address(Config::get_port());
     auto &&socket = std::make_shared<Socket>();
     socket->bind(address);
     socket->set_options(SO_REUSEADDR);
@@ -26,4 +30,7 @@ int main() {
         }
     }
     server.join();
+#ifdef _WIN32
+    Socket::cleanup();
+#endif
 }

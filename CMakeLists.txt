@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.8)
 
 project(async_roulette)
 
-set(CMAKE_CXX_STANDARD 14)
-set(TYPE UDP)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUDP")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUDP -DDEBUG_ENABLE -fstack-protector")
 
+set(TYPE UDP)
 add_subdirectory(lib/SQLiteCpp)
 include_directories(lib)
 
@@ -57,10 +57,12 @@ set(HANDLERS src/handlers/Handlers.h)
 set(CLIENT_HANDLERS src/handlers/ClientHandlers.cpp src/handlers/ClientHandlers.h ${HANDLERS} ${CLIENT} ${JSON})
 set(SERVER_HANDLERS src/handlers/ServerHandlers.cpp src/handlers/ServerHandlers.h ${HANDLERS} ${SERVER} ${JSON})
 
+set(CONFIG src/Config.h src/Config.cpp)
+
 add_executable(playground src/playground.cpp ${SESSION})
-add_executable(server src/config.h src/server.cpp ${SOCKET} ${SERVER} ${SERVER_COMMANDS} ${SERVER_HANDLERS})
-add_executable(client src/config.h src/client.cpp ${SOCKET} ${CLIENT} ${CLIENT_COMMANDS} ${CLIENT_HANDLERS})
-add_executable(init src/config.h src/init.cpp ${DATABASE})
+add_executable(server src/server.cpp ${CONFIG} ${SOCKET} ${SERVER} ${SERVER_COMMANDS} ${SERVER_HANDLERS})
+add_executable(client src/client.cpp ${CONFIG} ${CLIENT} ${CLIENT_COMMANDS} ${CLIENT_HANDLERS})
+add_executable(init src/init.cpp ${DATABASE})
 
 if (WIN32)
     target_link_libraries(server ws2_32 wsock32 SQLiteCpp sqlite3)

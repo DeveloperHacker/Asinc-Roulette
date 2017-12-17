@@ -1,11 +1,12 @@
-#include "config.h"
 #include "core/Client.h"
+#include "Config.h"
 
 int main() {
 #ifdef _WIN32
     Socket::startup();
 #endif
-    auto &&address = Socket::make_address(address::SERVER_HOST, address::SERVER_PORT);
+    std::cout << "Client connected to address " << Config::get_host() << ":" << Config::get_port() << std::endl;
+    auto &&address = Socket::make_address(Config::get_host(), Config::get_port());
     auto &&socket = std::make_shared<Socket>();
     socket->connect(address);
     Client client(socket);

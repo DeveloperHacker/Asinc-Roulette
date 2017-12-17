@@ -67,9 +67,7 @@ public:
             for (auto &&connection: connections) {
                 auto &&id = connection.first;
                 auto &&address = connection.second;
-                std::cout << " " << std::setw(15) << std::left << id;
-                Socket::write(std::cout, address);
-                std::cout << std::endl;
+                std::cout << " " << std::setw(15) << std::left << id << address << std::endl;
             }
             return true;
         };

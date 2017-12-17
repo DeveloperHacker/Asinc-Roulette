@@ -64,7 +64,7 @@ public:
 
     bool stopped();
 
-    std::unordered_map<identifier_t, std::shared_ptr<address_t>> get_connections();
+    std::unordered_map<identifier_t, address_t> get_connections();
 
     void kill(identifier_t id);
 
@@ -95,8 +95,8 @@ private:
     void disconnect_unavailable_connections();
     
     void handle_connection(std::shared_ptr<Connection> connection, ThreadPool &pool);
-
-    connections_iterator unsafe_kill(connections_iterator it);
+    
+    std::shared_ptr<Connection> get_connection(identifier_t id);
 
 public:
     static std::string format(identifier_t id, std::shared_ptr<Socket> socket);

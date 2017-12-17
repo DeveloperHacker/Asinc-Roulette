@@ -32,9 +32,12 @@ public:
     const static size_t BUFFER_SIZE = 512;
     const static size_t MAX_FRAGMENTATION_POWER = 256;
     const static size_t DISCONNECT_TIMEOUT = 60 * 1000;
+    const static size_t PING_TIMEOUT = 10 * 1000;
     const static size_t RETRY_TIMEOUT = 1000;
     const static std::string DELIMITER;
     const static char SUCCESS = 'S';
+    const static char PING = 'P';
+    const static char PONG = 'O';
     const static char USER = 'U';
     const static char EXIT = 'E';
 

@@ -6,11 +6,13 @@ const std::string LinuxSocket::DELIMITER("\r\n");
 LinuxSocket::LinuxSocket() :
         descriptor(::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)),
         retry_timeout(0),
+        ping_timeout(0),
         disconnect_timeout(0) {}
 
 LinuxSocket::LinuxSocket(socket_t descriptor) :
         descriptor(descriptor),
         retry_timeout(0),
+        ping_timeout(0),
         disconnect_timeout(0) {}
 
 LinuxSocket::~LinuxSocket() = default;
@@ -24,7 +26,7 @@ bool LinuxSocket::select(timeval *timeout) {
     FD_ZERO(&view);
     FD_SET(descriptor, &view);
     auto &&ready = ::select(descriptor + 1, &view, nullptr, nullptr, timeout);
-    if (ready < 0)
+    if (ready == SOCKET_ERROR)
         throw error("select is ripped");
     return static_cast<bool>(ready);
 }
@@ -34,7 +36,7 @@ std::shared_ptr<address_t> LinuxSocket::get_address() const {
     auto *flatten = reinterpret_cast<sockaddr *>(address.get());
     socklen_t address_len = sizeof(address);
     auto success = ::getsockname(descriptor, flatten, &address_len);
-    if (success < 0)
+    if (success == SOCKET_ERROR)
         return this->address;
     return address;
 }
@@ -47,7 +49,7 @@ std::shared_ptr<LinuxSocket> LinuxSocket::accept(address_t address) {
 
 void LinuxSocket::bind(const address_t &address) {
     auto success = ::bind(descriptor, reinterpret_cast<const sockaddr *>(&address), sizeof(address));
-    if (success < 0)
+    if (success == SOCKET_ERROR)
         throw error("bind: address already used");
 }
 
@@ -73,12 +75,11 @@ void LinuxSocket::send(std::string message) {
     buffered_send(message);
 }
 
-
 void LinuxSocket::raw_send(const std::string &message) {
     auto addr = reinterpret_cast<sockaddr *>(address.get());
     auto addr_len = sizeof(*addr);
-    auto length = ::sendto(descriptor, message.c_str(), message.length(), 0, &*addr, addr_len);
-    if (length <= 0)
+    auto length = ::sendto(descriptor, message.c_str(), message.length(), 0, addr, addr_len);
+    if (length == SOCKET_ERROR)
         throw error("send: connection refused");
 }
 
@@ -106,8 +107,9 @@ void LinuxSocket::buffered_send(std::string message) {
         send_data.push_back(static_cast<char>(package_numbers));
         send_data.append(message.substr(left, right));
         buffer.push_back(send_data);
-        raw_send(send_data);
     }
+    for (auto &&send_data: buffer)
+        raw_send(send_data);
     package_id++;
     send_buffer.push_back(buffer);
 }
@@ -121,7 +123,9 @@ std::string LinuxSocket::receive() {
 }
 
 void LinuxSocket::close() {
-    raw_send(EXIT);
+    try {
+        raw_send(EXIT);
+    } catch (error &ex) {}
 }
 
 bool LinuxSocket::empty() {
@@ -133,7 +137,7 @@ std::tuple<size_t, address_t> LinuxSocket::raw_receive(char *message, int flags)
     auto addr = reinterpret_cast<sockaddr *>(&address);
     socklen_t addr_size = sizeof(address);
     auto size = ::recvfrom(descriptor, message, BUFFER_SIZE, flags, addr, &addr_size);
-    if (size <= 0)
+    if (size == SOCKET_ERROR)
         throw error("receive: connection refused");
     return std::make_tuple<size_t, address_t>(static_cast<size_t>(size), std::move(address));
 }
@@ -148,10 +152,15 @@ std::tuple<std::string, address_t> LinuxSocket::update() {
 }
 
 bool LinuxSocket::update(size_t timeout) {
-    disconnect_timeout += timeout;
-    retry_timeout += timeout;
+    disconnect_timeout += timeout_msec;
+    ping_timeout += timeout_msec;
+    retry_timeout += timeout_msec;
     if (disconnect_timeout > DISCONNECT_TIMEOUT)
         return true;
+    if (ping_timeout > PING_TIMEOUT) {
+        ping_timeout = 0;
+        raw_send(PING);
+    }
     if (retry_timeout > RETRY_TIMEOUT) {
         for (auto &&messages: send_buffer)
             for (auto &&message: messages)
@@ -162,7 +171,6 @@ bool LinuxSocket::update(size_t timeout) {
 }
 
 bool LinuxSocket::update(const std::string &data) {
-    disconnect_timeout = 0;
     if (data.length() > BUFFER_SIZE)
         throw LinuxSocket::error("update error: message is too big");
     if (data.length() < 1)
@@ -170,6 +178,14 @@ bool LinuxSocket::update(const std::string &data) {
     auto &&package_type = data.c_str()[0];
     if (package_type == EXIT)
         return true;
+    if (package_type == PONG) {
+        disconnect_timeout = 0;
+        return false;
+    }
+    if (package_type == PING) {
+        raw_send(PONG);
+        return false;
+    }
     if (package_type == SUCCESS) {
         if (send_buffer.empty())
             return false;
@@ -178,12 +194,20 @@ bool LinuxSocket::update(const std::string &data) {
         return false;
     }
     if (package_type != USER)
-        throw LinuxSocket::error("update error: undefined package type");
+        throw LinuxSocket::error("update error: unexpected package type");
     if (data.length() < HEAD)
         throw LinuxSocket::error("update error: user message is too small");
     auto &&package_id = data.c_str()[1];
     auto &&package_number = data.c_str()[2];
     auto &&package_numbers = data.c_str()[3];
+    std::cout << "package receive from " << address << std::endl;
+    std::cout << "package type " << package_type << std::endl;
+    std::cout << "package id " << (int) package_id << std::endl;
+    std::cout << "package number " << (int) package_number << std::endl;
+    std::cout << "package numbers " << (int) package_numbers << std::endl;
+    std::cout << "expected package id " << (int) expected_id << std::endl;
+    std::cout << "expected package number " << (int) expected_number << std::endl;
+    std::cout << "expected package numbers " << (int) expected_numbers << std::endl;
     if (package_id != expected_id)
         return false;
     if (package_number != expected_number)

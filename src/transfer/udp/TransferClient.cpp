@@ -25,7 +25,8 @@ bool TransferClient::start() {
             if (socket->select(&timeout)) {
                 auto update_data = socket->update();
                 auto data = std::get<0>(update_data);
-                socket->update(data);
+                if (socket->update(data))
+                    stop();
                 while (!socket->empty()) {
                     auto &&message = socket->receive();
                     input(message);
