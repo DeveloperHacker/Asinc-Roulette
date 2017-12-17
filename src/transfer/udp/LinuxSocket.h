@@ -14,11 +14,6 @@ using address_t = sockaddr_in;
 
 class LinuxSocket {
 public:
-    enum Event {
-        DATA_IN,
-        TIMEOUT
-    };
-
     class error : public std::runtime_error {
     public:
         using std::runtime_error::runtime_error;
@@ -27,6 +22,7 @@ public:
     };
 
 public:
+    const static int SOCKET_ERROR = -1;
     const static size_t HEAD = 4;
     const static int WAIT_PACKAGE = 0;
     const static size_t BUFFER_SIZE = 512;
@@ -46,9 +42,10 @@ private:
     std::string buffer;
     std::deque<std::vector<std::string>> send_buffer;
     std::queue<std::string> receive_buffer;
-    std::shared_ptr<address_t> address;
-    uint64_t disconnect_timeout;
-    uint64_t retry_timeout;
+    address_t address;
+    size_t disconnect_timeout;
+    size_t ping_timeout;
+    size_t retry_timeout;
     char package_id = 0;
     char expected_id = 0;
     char expected_number = 0;
@@ -65,7 +62,7 @@ public:
 
     bool select(timeval *timeout);
 
-    std::shared_ptr<address_t> get_address() const;
+    address_t get_address() const;
 
     std::shared_ptr<LinuxSocket> accept(address_t address);
 
@@ -89,7 +86,7 @@ public:
 
     std::tuple<std::string, address_t> update();
 
-    bool update(size_t timeout);
+    bool update(size_t timeout_msec);
 
     bool update(const std::string &message);
 
@@ -102,12 +99,7 @@ public:
 
     static uint64_t concat(address_t address);
 
-    static std::ostream &write(std::ostream &stream, std::shared_ptr<address_t> address);
-
-    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket) {
-        auto &&address = socket->get_address();
-        return write(stream, address);
-    }
+    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket);
 
 private:
     void raw_send(char type);

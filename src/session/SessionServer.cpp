@@ -7,6 +7,8 @@ SessionServer::SessionServer(std::shared_ptr<Socket> socket) : TransferServer(so
 
 bool SessionServer::handle(identifier_t id, const std::string &message) {
     auto &&client = clients.find(id);
+    if (client == std::end(clients))
+        return true;
     auto &&session = client->second.first;
     auto &&state = client->second.second;
 #ifdef DEBUG_ENABLE

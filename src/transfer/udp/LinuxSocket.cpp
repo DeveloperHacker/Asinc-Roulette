@@ -31,19 +31,13 @@ bool LinuxSocket::select(timeval *timeout) {
     return static_cast<bool>(ready);
 }
 
-std::shared_ptr<address_t> LinuxSocket::get_address() const {
-    auto &&address = std::make_shared<address_t>();
-    auto *flatten = reinterpret_cast<sockaddr *>(address.get());
-    socklen_t address_len = sizeof(address);
-    auto success = ::getsockname(descriptor, flatten, &address_len);
-    if (success == SOCKET_ERROR)
-        return this->address;
+address_t LinuxSocket::get_address() const {
     return address;
 }
 
 std::shared_ptr<LinuxSocket> LinuxSocket::accept(address_t address) {
     auto &&socket = std::make_shared<LinuxSocket>(descriptor);
-    socket->address = std::make_shared<address_t>(address);
+    socket->address = address;
     return socket;
 }
 
@@ -63,7 +57,7 @@ void LinuxSocket::listen(int backlog) {
 }
 
 void LinuxSocket::connect(const address_t &address) {
-    this->address = std::make_shared<address_t>(address);
+    this->address = address;
 }
 
 void LinuxSocket::send(const char *message) {
@@ -76,7 +70,7 @@ void LinuxSocket::send(std::string message) {
 }
 
 void LinuxSocket::raw_send(const std::string &message) {
-    auto addr = reinterpret_cast<sockaddr *>(address.get());
+    auto addr = reinterpret_cast<sockaddr *>(&address);
     auto addr_len = sizeof(*addr);
     auto length = ::sendto(descriptor, message.c_str(), message.length(), 0, addr, addr_len);
     if (length == SOCKET_ERROR)
@@ -139,7 +133,7 @@ std::tuple<size_t, address_t> LinuxSocket::raw_receive(char *message, int flags)
     auto size = ::recvfrom(descriptor, message, BUFFER_SIZE, flags, addr, &addr_size);
     if (size == SOCKET_ERROR)
         throw error("receive: connection refused");
-    return std::make_tuple<size_t, address_t>(static_cast<size_t>(size), std::move(address));
+    return std::make_tuple<size_t, address_t>(static_cast<size_t>(size), std::move(address)); //NOLINT
 }
 
 std::tuple<std::string, address_t> LinuxSocket::update() {
@@ -148,10 +142,10 @@ std::tuple<std::string, address_t> LinuxSocket::update() {
     auto length = std::get<0>(result);
     auto address = std::get<1>(result);
     std::string message(data, length);
-    return std::make_tuple<std::string, address_t>(std::move(message), std::move(address));
+    return std::make_tuple<std::string, address_t>(std::move(message), std::move(address)); //NOLINT
 }
 
-bool LinuxSocket::update(size_t timeout) {
+bool LinuxSocket::update(size_t timeout_msec) {
     disconnect_timeout += timeout_msec;
     ping_timeout += timeout_msec;
     retry_timeout += timeout_msec;
@@ -200,14 +194,6 @@ bool LinuxSocket::update(const std::string &data) {
     auto &&package_id = data.c_str()[1];
     auto &&package_number = data.c_str()[2];
     auto &&package_numbers = data.c_str()[3];
-    std::cout << "package receive from " << address << std::endl;
-    std::cout << "package type " << package_type << std::endl;
-    std::cout << "package id " << (int) package_id << std::endl;
-    std::cout << "package number " << (int) package_number << std::endl;
-    std::cout << "package numbers " << (int) package_numbers << std::endl;
-    std::cout << "expected package id " << (int) expected_id << std::endl;
-    std::cout << "expected package number " << (int) expected_number << std::endl;
-    std::cout << "expected package numbers " << (int) expected_numbers << std::endl;
     if (package_id != expected_id)
         return false;
     if (package_number != expected_number)
@@ -254,13 +240,11 @@ address_t LinuxSocket::make_address(uint16_t port) {
     return address;
 }
 
-std::ostream &LinuxSocket::write(std::ostream &stream, std::shared_ptr<address_t> address) {
-    if (address == nullptr)
-        return stream << "<invalid-address>";
-    else
-        return stream << *address;
+uint64_t LinuxSocket::concat(address_t address) {
+    return address.sin_addr.s_addr << sizeof(in_addr_t) | address.sin_port;
 }
 
-uint64_t LinuxSocket::concat(address_t address) {
-    return address.sin_port << sizeof(in_addr_t) | address.sin_addr.s_addr;
+std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket) {
+    auto &&address = socket->get_address();
+    return stream << address;
 }

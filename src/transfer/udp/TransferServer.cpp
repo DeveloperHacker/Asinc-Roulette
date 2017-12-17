@@ -133,14 +133,12 @@ std::unordered_map<identifier_t, address_t> TransferServer::get_connections() {
 }
 
 void TransferServer::kill(identifier_t id) {
-    {
-        std::unique_lock<std::mutex> lock(mutex);
-        auto &&it = connections.find(id);
-        auto &&connection = it->second;
-        connection->socket->close();
-        it = connections.erase(it);
-    }
     disconnect_handle(id);
+    std::unique_lock<std::mutex> lock(mutex);
+    auto &&it = connections.find(id);
+    auto &&connection = it->second;
+    connection->socket->close();
+    it = connections.erase(it);
 }
 
 std::string TransferServer::format(identifier_t id, std::shared_ptr<Socket> socket) {
