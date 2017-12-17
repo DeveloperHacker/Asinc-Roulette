@@ -64,20 +64,21 @@ void LinuxSocket::close() {
 }
 
 std::shared_ptr<LinuxSocket> LinuxSocket::accept() {
-    auto socket = ::accept(descriptor, nullptr, nullptr);
-    if (socket < 0)
+    auto client_descriptor = ::accept(descriptor, nullptr, nullptr);
+    if (client_descriptor == SOCKET_ERROR)
         throw error("accept: error");
-    return std::make_shared<LinuxSocket>(socket);
+    auto &&socket = std::make_shared<LinuxSocket>(client_descriptor);
+    sockaddr address{};
+    socklen_t address_len = sizeof(address);
+    auto success = ::getsockname(descriptor, &address, &address_len);
+    if (success == SOCKET_ERROR)
+        throw error("accept: address hasn't recognized");
+    auto address_ptr = reinterpret_cast<address_t *>(&address);
+    socket->address = *address_ptr;
+    return socket;
 }
 
-std::shared_ptr<address_t> LinuxSocket::get_address() const {
-    auto &&address = std::make_shared<address_t>();
-    auto *flatten = reinterpret_cast<sockaddr *>(address.get());
-    socklen_t address_len = sizeof(address);
-    auto success = ::getsockname(descriptor, flatten, &address_len);
-    if (success < 0)
-        return this->address;
-    this->address = address;
+address_t LinuxSocket::get_address() const {
     return address;
 }
 
@@ -141,9 +142,7 @@ bool LinuxSocket::empty() {
     return received.empty();
 }
 
-std::ostream &LinuxSocket::write(std::ostream &stream, std::shared_ptr<address_t> address) {
-    if (address == nullptr)
-        return stream << "<invalid-address>";
-    else
-        return stream << *address;
+std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket) {
+    auto &&address = socket->get_address();
+    return stream << address;
 }

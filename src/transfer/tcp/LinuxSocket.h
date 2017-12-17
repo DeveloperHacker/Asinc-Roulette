@@ -24,12 +24,13 @@ public:
 public:
     const static size_t BUFFER_SIZE = 512;
     const static std::string DELIMITER;
+    const static int SOCKET_ERROR = -1;
 
 private:
     const socket_t descriptor;
     std::string buffer;
     std::queue<std::string> received;
-    std::shared_ptr<address_t> address;
+    address_t address;
 
 public:
     LinuxSocket();
@@ -42,7 +43,7 @@ public:
 
     bool select(timeval *timeout);
 
-    std::shared_ptr<address_t> get_address() const;
+    address_t get_address() const;
 
     std::shared_ptr<LinuxSocket> accept();
 
@@ -75,12 +76,7 @@ public:
 
     static address_t make_address(uint16_t port);
 
-    static std::ostream &write(std::ostream &stream, std::shared_ptr<address_t> address);
-
-    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket) {
-        auto &&address = socket->get_address();
-        return write(stream, address);
-    }
+    friend std::ostream &operator<<(std::ostream &stream, std::shared_ptr<LinuxSocket> socket);
 
 private:
     size_t receive(char *message, int flags);

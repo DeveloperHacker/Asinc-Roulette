@@ -1,25 +1,8 @@
 #include "WinSocket.h"
 
-socket_t init(int domain, int type, int protocol) {
-    WSADATA wsa_data{0};
+WinSocket::WinSocket() : descriptor(::socket(AF_INET, SOCK_DGRAM, IPPROTO_TCP)) {}
 
-    auto &&startup_status = WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    if (startup_status != 0)
-        throw WinSocket::error("WSAStartup failed with error code " + std::to_string(startup_status));
-
-    socket_t descriptor = ::socket(domain, type, protocol);
-    if (descriptor == INVALID_SOCKET) {
-        WSACleanup();
-        throw WinSocket::error("Socket creation failed with status " + std::to_string(WSAGetLastError()));
-    }
-    return descriptor;
-}
-
-WinSocket::WinSocket(int domain, int type, int protocol) : descriptor(init(domain, type, protocol)) {}
-
-WinSocket::WinSocket(socket_t socket) : descriptor(socket) {
-    // TODO(sergei): init socket address info
-}
+WinSocket::WinSocket(socket_t socket) : descriptor(socket) {}
 
 WinSocket::~WinSocket() {
     if (address_info != nullptr)

@@ -30,7 +30,7 @@ private:
     address_t address_info = nullptr;
 
 public:
-    WinSocket(int domain, int type, int protocol);
+    WinSocket();
 
     explicit WinSocket(socket_t socket);
 

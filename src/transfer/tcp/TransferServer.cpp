@@ -50,21 +50,18 @@ void task(
 }
 
 void TransferServer::disconnect_connections() {
-    std::unique_lock<std::mutex> lock(mutex);
-    connections_iterator it = std::begin(connections);
-    while (it != std::end(connections))
-        it = unsafe_kill(it);
+    auto &&connections = get_connections();
+    for (auto &&entry: connections)
+        kill(entry.first);
 }
 
 void TransferServer::disconnect_unavailable_connections() {
-    std::unique_lock<std::mutex> lock(mutex);
-    connections_iterator it = std::begin(connections);
-    while (it != std::end(connections)) {
-        auto &&connection = it->second;
+    auto &&connections = get_connections();
+    for (auto &&entry: connections) {
+        auto &&id = entry.first;
+        auto &&connection = get_connection(id);
         if (connection->close)
-            it = unsafe_kill(it);
-        else
-            ++it;
+            kill(id);
     }
 }
 
@@ -159,9 +156,9 @@ bool TransferServer::stopped() {
     return stop_requests;
 }
 
-std::unordered_map<identifier_t, std::shared_ptr<address_t>> TransferServer::get_connections() {
+std::unordered_map<identifier_t, address_t> TransferServer::get_connections() {
     std::unique_lock<std::mutex> lock(mutex);
-    std::unordered_map<identifier_t, std::shared_ptr<address_t>> view;
+    std::unordered_map<identifier_t, address_t> view;
     for (auto &&entry: connections) {
         auto &&id = entry.first;
         auto &&connection = entry.second;
@@ -172,9 +169,12 @@ std::unordered_map<identifier_t, std::shared_ptr<address_t>> TransferServer::get
 }
 
 void TransferServer::kill(identifier_t id) {
+    disconnect_handle(id);
     std::unique_lock<std::mutex> lock(mutex);
     auto &&it = connections.find(id);
-    unsafe_kill(it);
+    auto &&connection = it->second;
+    connection->socket->close();
+    it = connections.erase(it);
 }
 
 std::shared_ptr<Connection> TransferServer::connection_by_descriptor(socket_t descriptor) {
@@ -188,19 +188,6 @@ std::shared_ptr<Connection> TransferServer::connection_by_descriptor(socket_t de
         throw TransferServer::error("connection hasn't found");
     auto &&connection = conn_entry->second;
     return connection;
-}
-
-connections_iterator TransferServer::unsafe_kill(connections_iterator it) {
-    if (it == std::end(connections))
-        return it;
-    auto &&id = it->first;
-    auto &&connection = it->second;
-    auto &&socket = connection->socket;
-    socket->shutdown();
-    socket->close();
-    it = connections.erase(it);
-    disconnect_handle(id);
-    return it;
 }
 
 std::string TransferServer::format(identifier_t id, std::shared_ptr<Socket> socket) {
@@ -247,4 +234,12 @@ void TransferServer::send(identifier_t id, const std::string &message) {
     auto &&connection = entry->second;
     auto &&socket = connection->socket;
     socket->send(message);
+}
+
+std::shared_ptr<Connection> TransferServer::get_connection(identifier_t id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    auto &&entry = connections.find(id);
+    if (entry == std::end(connections))
+        throw TransferServer::error("connection don't found");
+    return entry->second;
 }
